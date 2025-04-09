@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 
 // assets
-import Logo from "./assets/superman_logo.png";
+import supermanLogo from "./assets/superman_logo.png";
 
 // components
 import NavBar from "./components/NavBar";
@@ -12,16 +12,17 @@ import Profile from "./pages/Profile";
 import Learn from "./pages/Learn";
 
 function App() {
-  const backgroundCSS = "bg-teal-500 bg-center absolute w-full h-full";
+  const backgroundCSS: string = "bg-primary bg-center absolute w-full h-full";
 
   const navColNames: string[] = ["Home", "Learn", "Profile"];
+
   return (
     <Router>
-      <div className={backgroundCSS}>
-        <div className="flex items-center justify-between px-8 py-4">
-          <img src={Logo} alt="Logo" className="w-10 h-10" />
-          <NavBar colNames={navColNames}></NavBar>
-        </div>
+      <div className={backgroundCSS}></div>
+
+      <div className="fixed top-0 z-50 w-full flex items-center justify-between px-8 py-4 bg-secondary">
+        <img src={supermanLogo} alt="Logo" className="w-10 h-10" />
+        <NavBar colNames={navColNames}></NavBar>
       </div>
 
       <Routes>
