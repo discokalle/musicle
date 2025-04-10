@@ -1,16 +1,19 @@
 import { Link, useLocation } from "react-router";
 
 function getPageLink(colName: string): string {
-  colName = colName.toLowerCase().replace(" ", "-");
-  return `/${colName !== "home" ? colName : ""}`;
+  if (colName == "Sign Out") return "";
+  return colName.toLowerCase().replace(" ", "-");
 }
 
 interface Props {
   colNames: string[];
+  isLoggedIn: boolean;
+  setIsLoggedIn: (value: boolean) => void;
 }
 
 // ``-string are used for template literals, enables embed. of vars. and exprs. in string
-function NavBar({ colNames }: Props) {
+function NavBar({ colNames, isLoggedIn, setIsLoggedIn }: Props) {
+  // console.log("isLoggedIn:", isLoggedIn);
   const location = useLocation();
 
   const navBarItemCSS =
@@ -21,6 +24,12 @@ function NavBar({ colNames }: Props) {
       <div className="flex gap-12">
         {colNames.map((colName) => {
           const link = getPageLink(colName);
+          if (
+            (isLoggedIn && (link === "login" || link === "sign-up")) ||
+            (!isLoggedIn && link !== "login" && link !== "sign-up")
+          ) {
+            return null;
+          }
           const isActive = location.pathname === link;
           return (
             <Link
@@ -29,6 +38,11 @@ function NavBar({ colNames }: Props) {
               className={`${navBarItemCSS} ${
                 isActive ? "underline font-bold" : ""
               }`}
+              onClick={() => {
+                if (colName === "Sign Out") {
+                  setIsLoggedIn(false);
+                }
+              }}
             >
               {colName}
             </Link>

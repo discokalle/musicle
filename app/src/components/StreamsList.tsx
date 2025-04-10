@@ -33,8 +33,8 @@ function StreamsList() {
     <>
       {items.length === 0 && <p>No item found</p>}
       <ul className="list-group space-y-2">
-        {items.map((item) => (
-          <StreamsListItem {...item}></StreamsListItem>
+        {items.map((item, index) => (
+          <StreamsListItem {...item} key={index}></StreamsListItem>
         ))}
       </ul>
       {/* <div>

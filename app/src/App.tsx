@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { useState } from "react";
 
 // assets
 import supermanLogo from "./assets/superman_logo.png";
@@ -7,6 +8,9 @@ import supermanLogo from "./assets/superman_logo.png";
 import NavBar from "./components/NavBar";
 
 // pages
+import Welcome from "./pages/Welcome";
+import SignUp from "./pages/SignUp";
+import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Learn from "./pages/Learn";
@@ -14,7 +18,15 @@ import Learn from "./pages/Learn";
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
 
-  const navColNames = ["Home", "Learn", "Profile"];
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navColNames = [
+    "Sign Up",
+    "Login",
+    "Home",
+    "Learn",
+    "Profile",
+    "Sign Out",
+  ];
 
   return (
     <Router>
@@ -22,11 +34,24 @@ function App() {
 
       <div className="fixed top-0 z-50 w-full flex items-center justify-between px-8 py-4 bg-secondary">
         <img src={supermanLogo} alt="Logo" className="w-10 h-10" />
-        <NavBar colNames={navColNames}></NavBar>
+        <NavBar
+          colNames={navColNames}
+          isLoggedIn={isLoggedIn}
+          setIsLoggedIn={setIsLoggedIn}
+        ></NavBar>
       </div>
 
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Welcome />} />
+        <Route
+          path="/sign-up"
+          element={<SignUp setIsLoggedIn={setIsLoggedIn} />}
+        />
+        <Route
+          path="/login"
+          element={<Login setIsLoggedIn={setIsLoggedIn} />}
+        />
+        <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/learn" element={<Learn />} />
       </Routes>
