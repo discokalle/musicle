@@ -12,9 +12,9 @@ import Profile from "./pages/Profile";
 import Learn from "./pages/Learn";
 
 function App() {
-  const backgroundCSS: string = "bg-primary bg-center absolute w-full h-full";
+  const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
 
-  const navColNames: string[] = ["Home", "Learn", "Profile"];
+  const navColNames = ["Home", "Learn", "Profile"];
 
   return (
     <Router>

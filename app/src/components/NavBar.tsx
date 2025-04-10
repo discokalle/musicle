@@ -13,15 +13,15 @@ interface Props {
 function NavBar({ colNames }: Props) {
   const location = useLocation();
 
-  const navBarItemCSS: string =
+  const navBarItemCSS =
     "text-neutral text-lg transition duration-250 hover:underline hover:text-accent";
 
   return (
     <>
       <div className="flex gap-12">
         {colNames.map((colName) => {
-          const link: string = getPageLink(colName);
-          const isActive: boolean = location.pathname === link;
+          const link = getPageLink(colName);
+          const isActive = location.pathname === link;
           return (
             <Link
               key={colName}
