@@ -3,3 +3,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@theme {
+  --color-primary: #062743;
+  --color-secondary: #113a5d;
+  --color-accent: #c4ffdd;
+  --color-neutral: #f9f9f9;
+}

@@ -1,5 +1,12 @@
 # Ideas
 
+## Functionality
+
+- Games/social features:
+  - Music quiz that is generated based on the users preferences
+  - Queue for in-person listening sessions with voting
+  - Minigames like "guess the song based on the lyrics"
+
 ## API resources
 
 - General API collections
