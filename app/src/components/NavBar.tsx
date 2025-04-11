@@ -11,9 +11,7 @@ interface Props {
   setIsLoggedIn: (value: boolean) => void;
 }
 
-// ``-string are used for template literals, enables embed. of vars. and exprs. in string
 function NavBar({ colNames, isLoggedIn, setIsLoggedIn }: Props) {
-  // console.log("isLoggedIn:", isLoggedIn);
   const location = useLocation();
 
   const navBarItemCSS =

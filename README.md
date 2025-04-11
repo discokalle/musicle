@@ -17,4 +17,4 @@
 ### Technological
 
 -   Client framework (front-end): React (w/ Tailwind)
--   Server framework (back-end): ...
+-   Server framework (back-end): Firebase
