@@ -1,21 +1,11 @@
-import { useState, useEffect } from "react";
-
 import StreamsListItem from "./StreamsListItem";
 
+// interface Props {
+//   items: {}[];
+// }
+
 function StreamsList() {
-  // const exApiUrl = "https://jsonplaceholder.typicode.com/users"; // example API
-  // const [exData, setExData] = useState([]);
-
-  // const fetchExData = () => {
-  //   return fetch(exApiUrl)
-  //     .then((res) => res.json())
-  //     .then((d) => setExData(d));
-  // };
-
-  // useEffect(() => {
-  //   fetchExData();
-  // }, []);
-
+  // will load data from connected service here later
   const items = [
     {
       songName: "Bada Bastu",
@@ -37,11 +27,6 @@ function StreamsList() {
           <StreamsListItem {...item} key={index}></StreamsListItem>
         ))}
       </ul>
-      {/* <div>
-        {exData.map((exDataItem, index) => {
-          return <div>{exDataItem.name}</div>;
-        })}
-      </div> */}
     </>
   );
 }

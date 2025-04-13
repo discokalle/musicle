@@ -1,6 +1,11 @@
+import { User } from "firebase/auth";
 import gorProfilePic from "../assets/gor-profile-picture.jpeg";
 
-function Profile() {
+interface Props {
+  user: User;
+}
+
+function Profile({ user }: Props) {
   const bannerCSS =
     "relative flex items-center gap-5 bg-secondary rounded-md\
      object-cover px-4 py-3 shadow-md/25";
@@ -15,15 +20,15 @@ function Profile() {
     <div className={bannerCSS}>
       <div className="relative">
         <img
-          src={gorProfilePic}
+          src={user.photoURL || gorProfilePic}
           alt="Profile"
           className="w-30 h-30 rounded-md object-cover shadow-md/25"
         />
         <div className={statusSymbolCSS}></div>
       </div>
       <div>
-        <h1 className={usernameCSS}>Gordu962</h1>
-        <p className={subtitleCSS}>CHOP SUEY!</p>
+        <h1 className={usernameCSS}>{user.displayName || "Username N/A"}</h1>
+        <p className={subtitleCSS}>{user.email}</p>
       </div>
     </div>
   );

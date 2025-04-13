@@ -1,4 +1,9 @@
 import { useNavigate } from "react-router";
+import { useState } from "react";
+import { AuthErrorCodes, signInWithEmailAndPassword } from "firebase/auth";
+
+import { auth } from "../firebase";
+
 import Button from "../components/Button";
 
 interface Props {
@@ -7,10 +12,21 @@ interface Props {
 
 function Login({ setIsLoggedIn }: Props) {
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleSignUp = () => {
-    setIsLoggedIn(true);
-    navigate("/home");
+  const handleLogin = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      setIsLoggedIn(true);
+      navigate("/home");
+    } catch (e: any) {
+      if (e.code == AuthErrorCodes.INVALID_LOGIN_CREDENTIALS) {
+        alert("Invalid login credentials. Please try again.");
+      } else {
+        alert(`Error: ${e.message}`);
+      }
+    }
   };
 
   const centerContainerCSS =
@@ -26,14 +42,22 @@ function Login({ setIsLoggedIn }: Props) {
     <div className={centerContainerCSS}>
       <h1 className={titleCSS}>Login To Your Account</h1>
       <div className="flex flex-col gap-5 text-xl w-full">
-        <input type="text" placeholder="Username" className={inputCSS}></input>
+        <input
+          type="email"
+          placeholder="Email"
+          className={inputCSS}
+          value={email}
+          onChange={(text) => setEmail(text.target.value)}
+        ></input>
         <input
           type="password"
           placeholder="Password"
           className={inputCSS}
+          value={password}
+          onChange={(text) => setPassword(text.target.value)}
         ></input>
       </div>
-      <Button size="large" onClick={handleSignUp}>
+      <Button size="large" onClick={handleLogin}>
         Login
       </Button>
     </div>
