@@ -4,7 +4,7 @@ interface Props {
   albumName: string;
 }
 
-function StreamsListItem({ songName, artistName, albumName }: Props) {
+function StreamListItem({ songName, artistName, albumName }: Props) {
   const containerCSS =
     "list-group-item bg-secondary rounded-md shadow-md/25 p-4 hover:text-accent transition duration-250";
 
@@ -22,4 +22,4 @@ function StreamsListItem({ songName, artistName, albumName }: Props) {
   );
 }
 
-export default StreamsListItem;
+export default StreamListItem;

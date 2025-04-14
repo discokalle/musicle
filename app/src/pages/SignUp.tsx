@@ -23,6 +23,10 @@ function SignUp({ setIsLoggedIn }: Props) {
 
   const handleSignUp = async () => {
     try {
+      if (username.length > 12) {
+        throw new Error("Username can at most be 12 characters long.");
+      }
+
       const snapshot = await get(ref(db, `usernames/${username}`));
       if (snapshot.exists()) {
         alert("Username is already taken. Please try again.");
@@ -36,7 +40,7 @@ function SignUp({ setIsLoggedIn }: Props) {
       );
 
       const userId = userCred.user.uid;
-      await set(ref(db, `usernames/${username}`), email);
+      await set(ref(db, `usernames/${username}`), userId);
       await set(ref(db, `users/${userId}`), {
         email,
         username,

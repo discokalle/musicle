@@ -5,7 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 
 // assets
-import supermanLogo from "./assets/superman_logo.png";
+import supermanLogo from "./assets/superman-logo.png";
 
 // components
 import NavBar from "./components/NavBar";
@@ -69,7 +69,7 @@ function App() {
           element={<Login setIsLoggedIn={setIsLoggedIn} />}
         />
         <Route path="/home" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:username" element={<Profile />} />
         <Route path="/learn" element={<Learn />} />
       </Routes>
     </Router>
