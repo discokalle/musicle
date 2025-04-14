@@ -1,8 +1,8 @@
-type SongCarouselProps = {
+type CarouselProps = {
   children: React.ReactNode;
 };
 
-function SongCarousel({ children }: SongCarouselProps) {
+function Carousel({ children }: CarouselProps) {
   return (
     <div className="p-5">
       <div className="relative overflow-x-auto w-110 flex gap-5 py-5">
@@ -12,4 +12,4 @@ function SongCarousel({ children }: SongCarouselProps) {
   );
 }
 
-export default SongCarousel;
+export default Carousel;
