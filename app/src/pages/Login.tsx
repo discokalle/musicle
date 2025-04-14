@@ -23,7 +23,9 @@ function Login({ setIsLoggedIn }: Props) {
         const snapshot = await get(ref(db, `usernames/${email}`));
         if (snapshot.exists()) {
           // if username was entered, retrieve corresponding email address
-          emailAddr = snapshot.val();
+          const userId = snapshot.val();
+          const userSnapshot = await get(ref(db, `users/${userId}`));
+          emailAddr = userSnapshot.val();
         }
       } catch (e: any) {}
 

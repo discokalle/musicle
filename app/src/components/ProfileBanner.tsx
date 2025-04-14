@@ -1,8 +1,7 @@
-import { User } from "firebase/auth";
 import defaultProfilePic from "../assets/default-profile-pic.png";
 
 interface Props {
-  user: User;
+  user: any;
 }
 
 function Profile({ user }: Props) {
@@ -20,14 +19,14 @@ function Profile({ user }: Props) {
     <div className={bannerCSS}>
       <div className="relative">
         <img
-          src={user.photoURL || defaultProfilePic}
+          src={user.profilePicture || defaultProfilePic}
           alt="Profile"
           className="w-30 h-30 rounded-md object-cover shadow-md/25"
         />
         <div className={statusSymbolCSS}></div>
       </div>
       <div>
-        <h1 className={usernameCSS}>{user.displayName}</h1>
+        <h1 className={usernameCSS}>{user.username}</h1>
         <p className={subtitleCSS}>{user.email}</p>
       </div>
     </div>
