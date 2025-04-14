@@ -2,6 +2,8 @@
 
 ## Functionality
 
+- Add profile picture upload option for users (Firebase storage costs money, so wait with this for now)
+
 - Games/social features:
   - Music quiz that is generated based on the users preferences
   - Queue for in-person listening sessions with voting

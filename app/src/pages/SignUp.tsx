@@ -1,8 +1,13 @@
 import { useNavigate } from "react-router";
 import { useState } from "react";
-import { AuthErrorCodes, createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  AuthErrorCodes,
+  createUserWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { ref, set, get } from "firebase/database";
 
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
 
@@ -12,12 +17,32 @@ interface Props {
 
 function SignUp({ setIsLoggedIn }: Props) {
   const navigate = useNavigate();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSignUp = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const snapshot = await get(ref(db, `usernames/${username}`));
+      if (snapshot.exists()) {
+        alert("Username is already taken. Please try again.");
+        return;
+      }
+
+      const userCred = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const userId = userCred.user.uid;
+      await set(ref(db, `usernames/${username}`), email);
+      await set(ref(db, `users/${userId}`), {
+        email,
+        username,
+      });
+      await updateProfile(userCred.user, { displayName: username });
+
       setIsLoggedIn(true);
       navigate("/home");
     } catch (e: any) {
@@ -38,13 +63,19 @@ function SignUp({ setIsLoggedIn }: Props) {
     "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
 
   const inputCSS =
-    "text-neutral w-[90%] mx-auto p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent";
+    "text-neutral w-[90%] mx-auto p-2 border border-gray-300 rounded-md\
+     focus:outline-none focus:ring-2 focus:ring-accent";
 
   return (
     <div className={centerContainerCSS}>
       <h1 className={titleCSS}>Create Your Account</h1>
       <div className="flex flex-col gap-5 text-xl w-full">
-        {/* <input type="text" placeholder="Username" className={inputCSS}></input> */}
+        <input
+          type="text"
+          placeholder="Username"
+          className={inputCSS}
+          onChange={(text) => setUsername(text.target.value)}
+        ></input>
         <input
           type="email"
           placeholder="Email"
