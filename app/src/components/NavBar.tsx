@@ -1,8 +1,8 @@
 import { Link, useLocation } from "react-router";
 
 function getPageLink(colName: string): string {
-  if (colName == "Sign Out") return "";
-  return colName.toLowerCase().replace(" ", "-");
+  if (colName == "Sign Out") return "/";
+  return "/" + colName.toLowerCase().replace(" ", "-");
 }
 
 interface Props {
@@ -23,8 +23,8 @@ function NavBar({ colNames, isLoggedIn, setIsLoggedIn }: Props) {
         {colNames.map((colName) => {
           const link = getPageLink(colName);
           if (
-            (isLoggedIn && (link === "login" || link === "sign-up")) ||
-            (!isLoggedIn && link !== "login" && link !== "sign-up")
+            (isLoggedIn && (link === "/login" || link === "/sign-up")) ||
+            (!isLoggedIn && link !== "/login" && link !== "/sign-up")
           ) {
             return null;
           }

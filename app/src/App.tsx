@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+
+import { auth } from "./firebase";
 
 // assets
 import supermanLogo from "./assets/superman_logo.png";
@@ -19,6 +22,8 @@ function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
   const navColNames = [
     "Sign Up",
     "Login",
@@ -27,6 +32,18 @@ function App() {
     "Profile",
     "Sign Out",
   ];
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (user) => {
+      setIsLoggedIn(user ? true : false);
+      setIsLoading(false);
+    });
+  }, []);
+
+  if (isLoading) {
+    // replace w/ proper loading animation later
+    return <div>Loading...</div>;
+  }
 
   return (
     <Router>
