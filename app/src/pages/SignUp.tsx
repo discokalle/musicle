@@ -11,9 +11,9 @@ import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
 
-interface Props {
+type Props = {
   setIsLoggedIn: (value: boolean) => void;
-}
+};
 
 function SignUp({ setIsLoggedIn }: Props) {
   const navigate = useNavigate();

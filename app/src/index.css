@@ -10,3 +10,13 @@
   --color-accent: #c4ffdd;
   --color-neutral: #f9f9f9;
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

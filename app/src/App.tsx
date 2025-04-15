@@ -48,15 +48,12 @@ function App() {
   return (
     <Router>
       <div className={backgroundCSS}></div>
-
-      <div className="fixed top-0 z-50 w-full flex items-center justify-between px-8 py-4 bg-secondary">
-        <img src={supermanLogo} alt="Logo" className="w-10 h-10" />
-        <NavBar
-          colNames={navColNames}
-          isLoggedIn={isLoggedIn}
-          setIsLoggedIn={setIsLoggedIn}
-        ></NavBar>
-      </div>
+      <NavBar
+        logo={supermanLogo}
+        colNames={navColNames}
+        isLoggedIn={isLoggedIn}
+        setIsLoggedIn={setIsLoggedIn}
+      ></NavBar>
 
       <Routes>
         <Route path="/" element={<Welcome />} />

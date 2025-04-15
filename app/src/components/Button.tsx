@@ -1,8 +1,8 @@
-interface Props {
+type Props = {
   children: React.ReactNode;
   onClick?: () => void;
   size?: "small" | "medium" | "large";
-}
+};
 
 function Button({ children, onClick, size = "medium" }: Props) {
   const textSize =

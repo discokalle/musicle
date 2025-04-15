@@ -1,3 +1,5 @@
+import SearchBar from "../components/SearchBar";
+
 import { Link, useLocation } from "react-router";
 
 import { auth } from "../firebase";
@@ -10,27 +12,32 @@ function getPageLink(colName: string): string {
   return colName.toLowerCase().replace(" ", "-");
 }
 
-interface Props {
+type Props = {
+  logo: string;
   colNames: string[];
   isLoggedIn: boolean;
   setIsLoggedIn: (value: boolean) => void;
-}
+};
 
-function NavBar({ colNames, isLoggedIn, setIsLoggedIn }: Props) {
+function NavBar({ logo, colNames, isLoggedIn, setIsLoggedIn }: Props) {
   const location = useLocation();
+
+  const containerCSS =
+    "fixed top-0 z-50 w-full flex items-center justify-between px-8 py-4 bg-secondary";
 
   const navBarItemCSS =
     "text-neutral text-lg transition duration-250 hover:underline hover:text-accent";
 
   return (
-    <>
+    <div className={containerCSS}>
+      <img src={logo} alt="Logo" className="w-10 h-10" />
+      <SearchBar></SearchBar>
       <div className="flex gap-12">
         {colNames.map((colName) => {
           const link = getPageLink(colName);
           if (
             (isLoggedIn && (colName === "Login" || colName === "Sign Up")) ||
-            (!isLoggedIn && colName === "Login") ||
-            colName === "Sign Up"
+            (!isLoggedIn && !(colName === "Login" || colName === "Sign Up"))
           ) {
             return null;
           }
@@ -53,7 +60,7 @@ function NavBar({ colNames, isLoggedIn, setIsLoggedIn }: Props) {
           );
         })}
       </div>
-    </>
+    </div>
   );
 }
 

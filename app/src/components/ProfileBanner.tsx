@@ -1,8 +1,11 @@
 import defaultProfilePic from "../assets/default-profile-pic.png";
+import RoundButton from "../components/RoundButton";
 
-interface Props {
+import { auth } from "../firebase";
+
+type Props = {
   user: any;
-}
+};
 
 function Profile({ user }: Props) {
   const bannerCSS =
@@ -28,6 +31,11 @@ function Profile({ user }: Props) {
       <div>
         <h1 className={usernameCSS}>{user.username}</h1>
         <p className={subtitleCSS}>{user.email}</p>
+      </div>
+      <div className="absolute top-4 right-4">
+        {auth.currentUser?.displayName != user.username && (
+          <RoundButton size="small">+</RoundButton>
+        )}
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 import React from "react";
 
-interface Props {
+type Props = {
   children?: React.ReactNode;
-}
+};
 
 function List({ children }: Props) {
   return (
