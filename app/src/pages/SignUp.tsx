@@ -11,15 +11,23 @@ import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
 
-interface Props {
+type Props = {
   setIsLoggedIn: (value: boolean) => void;
-}
+};
 
 function SignUp({ setIsLoggedIn }: Props) {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  const handleKeyDown = async (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === "Enter") {
+      handleSignUp();
+    }
+  };
 
   const handleSignUp = async () => {
     try {
@@ -79,6 +87,7 @@ function SignUp({ setIsLoggedIn }: Props) {
           placeholder="Username"
           className={inputCSS}
           onChange={(text) => setUsername(text.target.value)}
+          onKeyDown={handleKeyDown}
         ></input>
         <input
           type="email"
@@ -86,6 +95,7 @@ function SignUp({ setIsLoggedIn }: Props) {
           className={inputCSS}
           value={email}
           onChange={(text) => setEmail(text.target.value)}
+          onKeyDown={handleKeyDown}
         ></input>
         <input
           type="password"
@@ -93,6 +103,7 @@ function SignUp({ setIsLoggedIn }: Props) {
           className={inputCSS}
           value={password}
           onChange={(text) => setPassword(text.target.value)}
+          onKeyDown={handleKeyDown}
         ></input>
       </div>
       <Button size="large" onClick={handleSignUp}>

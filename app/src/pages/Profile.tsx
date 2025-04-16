@@ -1,8 +1,10 @@
 import List from "../components/List";
 import StreamListItem from "../components/StreamListItem";
 import ProfileBanner from "../components/ProfileBanner";
+import SongCardStatic from "../components/SongCardStatic";
+
 import { useParams } from "react-router";
-import { ref, get } from "firebase/database";
+import { ref, get, DataSnapshot } from "firebase/database";
 import { useState, useEffect } from "react";
 
 import { db } from "../firebase";
@@ -13,7 +15,7 @@ function Profile() {
     -translate-x-1/2 -translate-y-1/2 gap-5";
 
   const { username } = useParams();
-  const [user, setUser] = useState<any>(null);
+  const [userSnapshot, setUserSnapshot] = useState<DataSnapshot>();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +25,7 @@ function Profile() {
         if (snapshot.exists()) {
           const userId = snapshot.val();
           const userSnapshot = await get(ref(db, `users/${userId}`));
-          setUser(userSnapshot.val());
+          setUserSnapshot(userSnapshot);
         }
       } catch (e: any) {
         return <div>Error fetching user.</div>;
@@ -39,11 +41,12 @@ function Profile() {
     <div>Loading...</div>;
   }
 
-  if (!user) {
+  if (!userSnapshot) {
     return <div>Cannot find user.</div>;
   }
 
-  // will load data from connected service here later
+  // NOTE: will load data from connected service here later
+  // -------------------
   const items = [
     {
       songName: "Bada Bastu",
@@ -62,9 +65,12 @@ function Profile() {
     },
   ];
 
+  const songCardParams = { artist: "jon", title: "åka båt", cover: "" };
+  // -------------------
+
   return (
     <div className={containerCSS}>
-      <ProfileBanner user={user}></ProfileBanner>
+      <ProfileBanner userSnapshot={userSnapshot}></ProfileBanner>
       <div className="flex flex-row gap-5 items-start">
         <div className="flex flex-col gap-3">
           <h1 className="text-neutral text-2xl font-bold">Recent Streams</h1>
@@ -75,8 +81,7 @@ function Profile() {
           </List>
         </div>
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">(top artist here)</p>
-          <p className="text-3xl font-bold">(top genre here)</p>
+          <SongCardStatic {...songCardParams}></SongCardStatic>
         </div>
       </div>
     </div>

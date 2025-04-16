@@ -1,8 +1,8 @@
-interface Props {
+type Props = {
   songName: string;
   artistName: string;
   albumName: string;
-}
+};
 
 function StreamListItem({ songName, artistName, albumName }: Props) {
   const containerCSS =
