@@ -31,7 +31,12 @@ function NavBar({ logo, colNames, isLoggedIn, setIsLoggedIn }: Props) {
   return (
     <div className={containerCSS}>
       <img src={logo} alt="Logo" className="w-10 h-10" />
-      {isLoggedIn && <SearchBar></SearchBar>}
+      {isLoggedIn && (
+        <SearchBar
+          dbCollectionName="usernames"
+          inputPlaceholderText="Search for a user..."
+        ></SearchBar>
+      )}
       <div className="flex gap-12">
         {colNames.map((colName) => {
           const link = getPageLink(colName);

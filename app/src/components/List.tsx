@@ -2,12 +2,13 @@ import React from "react";
 
 type Props = {
   children?: React.ReactNode;
+  className?: string;
 };
 
-function List({ children }: Props) {
+function List({ children, className }: Props) {
   return (
     <>
-      <ul className="list-group space-y-2">
+      <ul className={`${className} list-group space-y-2`}>
         {React.Children.count(children) > 0 ? (
           children
         ) : (

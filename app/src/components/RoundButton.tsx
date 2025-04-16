@@ -18,7 +18,7 @@ function RoundButton({ children, className, onClick, size = "medium" }: Props) {
                 flex items-center justify-center
                 rounded-full p-3 shadow-md/75 bg-neutral font-bold
                 text-secondary hover:text-accent hover:hover:shadow-sm/100
-                transition-all duration-250 ease-in-out`;
+                transition-all duration-250 ease-in-out cursor-pointer`;
 
   return (
     <button className={CSS} onClick={onClick}>
