@@ -7,11 +7,7 @@ import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
 
-type Props = {
-  setIsLoggedIn: (value: boolean) => void;
-};
-
-function Login({ setIsLoggedIn }: Props) {
+function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState(""); // note: either username or email
   const [password, setPassword] = useState("");
@@ -25,12 +21,11 @@ function Login({ setIsLoggedIn }: Props) {
           // if username was entered, retrieve corresponding email address
           const userId = snapshot.val();
           const userSnapshot = await get(ref(db, `users/${userId}`));
-          emailAddr = userSnapshot.val();
+          emailAddr = userSnapshot.val().email;
         }
       } catch (e: any) {}
 
       await signInWithEmailAndPassword(auth, emailAddr, password);
-      setIsLoggedIn(true);
       navigate("/home");
     } catch (e: any) {
       if (e.code == AuthErrorCodes.INVALID_LOGIN_CREDENTIALS) {
@@ -38,6 +33,14 @@ function Login({ setIsLoggedIn }: Props) {
       } else {
         alert(`Error: ${e.message}`);
       }
+    }
+  };
+
+  const handleKeyDown = async (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === "Enter") {
+      handleLogin();
     }
   };
 
@@ -61,6 +64,7 @@ function Login({ setIsLoggedIn }: Props) {
           className={inputCSS}
           value={email}
           onChange={(text) => setEmail(text.target.value)}
+          onKeyDown={handleKeyDown}
         ></input>
         <input
           type="password"
@@ -68,6 +72,7 @@ function Login({ setIsLoggedIn }: Props) {
           className={inputCSS}
           value={password}
           onChange={(text) => setPassword(text.target.value)}
+          onKeyDown={handleKeyDown}
         ></input>
       </div>
       <Button size="large" onClick={handleLogin}>

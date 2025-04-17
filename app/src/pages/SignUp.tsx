@@ -11,23 +11,11 @@ import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
 
-type Props = {
-  setIsLoggedIn: (value: boolean) => void;
-};
-
-function SignUp({ setIsLoggedIn }: Props) {
+function SignUp() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const handleKeyDown = async (
-    event: React.KeyboardEvent<HTMLInputElement>
-  ) => {
-    if (event.key === "Enter") {
-      handleSignUp();
-    }
-  };
 
   const handleSignUp = async () => {
     try {
@@ -55,7 +43,6 @@ function SignUp({ setIsLoggedIn }: Props) {
       });
       await updateProfile(userCred.user, { displayName: username });
 
-      setIsLoggedIn(true);
       navigate("/home");
     } catch (e: any) {
       if (e.code == AuthErrorCodes.INVALID_EMAIL) {
@@ -65,6 +52,14 @@ function SignUp({ setIsLoggedIn }: Props) {
       } else {
         alert(`Error: ${e.message}`);
       }
+    }
+  };
+
+  const handleKeyDown = async (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === "Enter") {
+      handleSignUp();
     }
   };
 
