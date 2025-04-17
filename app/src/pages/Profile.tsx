@@ -10,25 +10,25 @@ import { useState, useEffect } from "react";
 import { db } from "../firebase";
 
 function Profile() {
-  const containerCSS =
-    "text-neutral absolute flex flex-col left-1/2 top-1/2 transform\
-    -translate-x-1/2 -translate-y-1/2 gap-5";
-
   const { username } = useParams();
   const [userSnapshot, setUserSnapshot] = useState<DataSnapshot>();
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchUser = async () => {
+      setIsLoading(true);
+      setError("");
       try {
         const snapshot = await get(ref(db, `usernames/${username}`));
         if (snapshot.exists()) {
           const userId = snapshot.val();
-          const userSnapshot = await get(ref(db, `users/${userId}`));
-          setUserSnapshot(userSnapshot);
+          setUserSnapshot(await get(ref(db, `users/${userId}`)));
+        } else {
+          throw new Error("User does not exist.");
         }
       } catch (e: any) {
-        return <div>Error fetching user.</div>;
+        setError(e.message);
       } finally {
         setIsLoading(false);
       }
@@ -38,11 +38,11 @@ function Profile() {
   }, [username]);
 
   if (isLoading) {
-    <div>Loading...</div>;
+    return <div>Loading...</div>;
   }
 
-  if (!userSnapshot) {
-    return <div>Cannot find user.</div>;
+  if (error.trim() !== "" || !userSnapshot) {
+    return <div>{`Error: ${error}`}</div>;
   }
 
   // NOTE: will load data from connected service here later
@@ -64,9 +64,13 @@ function Profile() {
       albumName: "Norrland",
     },
   ];
-
   const songCardParams = { artist: "jon", title: "åka båt", cover: "" };
+  const followers = ["albert", "herbert", "etc"];
   // -------------------
+
+  const containerCSS =
+    "text-neutral absolute flex flex-col left-1/2 top-1/2 transform\
+  -translate-x-1/2 -translate-y-1/2 gap-5";
 
   return (
     <div className={containerCSS}>
@@ -77,6 +81,12 @@ function Profile() {
           <List>
             {items.map((item, index) => (
               <StreamListItem key={index} {...item}></StreamListItem>
+            ))}
+          </List>
+          <h1 className="text-neutral text-2xl font-bold">Followers</h1>
+          <List>
+            {followers.map((flwr, index) => (
+              <li key={index}>{flwr}</li>
             ))}
           </List>
         </div>

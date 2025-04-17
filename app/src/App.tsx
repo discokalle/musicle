@@ -52,19 +52,12 @@ function App() {
         logo={supermanLogo}
         colNames={navColNames}
         isLoggedIn={isLoggedIn}
-        setIsLoggedIn={setIsLoggedIn}
       ></NavBar>
 
       <Routes>
         <Route path="/" element={<Welcome />} />
-        <Route
-          path="/sign-up"
-          element={<SignUp setIsLoggedIn={setIsLoggedIn} />}
-        />
-        <Route
-          path="/login"
-          element={<Login setIsLoggedIn={setIsLoggedIn} />}
-        />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/learn" element={<Learn />} />

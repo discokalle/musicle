@@ -1,6 +1,7 @@
 import SearchBar from "../components/SearchBar";
 
 import { Link, useLocation } from "react-router";
+import { signOut } from "firebase/auth";
 
 import { auth } from "../firebase";
 
@@ -16,11 +17,18 @@ type Props = {
   logo: string;
   colNames: string[];
   isLoggedIn: boolean;
-  setIsLoggedIn: (value: boolean) => void;
 };
 
-function NavBar({ logo, colNames, isLoggedIn, setIsLoggedIn }: Props) {
+function NavBar({ logo, colNames, isLoggedIn }: Props) {
   const location = useLocation();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (e: any) {
+      console.log("Signout failed.");
+    }
+  };
 
   const containerCSS =
     "fixed top-0 z-50 w-full flex items-center justify-between px-8 py-4 bg-secondary";
@@ -54,11 +62,7 @@ function NavBar({ logo, colNames, isLoggedIn, setIsLoggedIn }: Props) {
               className={`${navBarItemCSS} ${
                 isActive ? "underline font-bold" : ""
               }`}
-              onClick={() => {
-                if (colName === "Sign Out") {
-                  setIsLoggedIn(false);
-                }
-              }}
+              onClick={colName === "Sign Out" ? handleSignOut : undefined}
             >
               {colName}
             </Link>
