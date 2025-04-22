@@ -48,7 +48,7 @@ function Profile() {
     return <div>Loading...</div>;
   }
 
-  if (error.trim() !== "" || !userSnapshot) {
+  if (error || !userSnapshot) {
     return <div>{`Error: ${error}`}</div>;
   }
 

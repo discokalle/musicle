@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router";
+import { auth } from "../firebase";
 
 function SpotifyCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const hasHandledCallback = useRef(false); // to only have the effect run once
 
   useEffect(() => {
     const cleanup = (errorMsg: string) => {
@@ -15,37 +17,40 @@ function SpotifyCallback() {
     };
 
     const handleCallback = async () => {
+      if (hasHandledCallback.current) return;
+      hasHandledCallback.current = true;
+
       const code = searchParams.get("code");
       const returnedState = searchParams.get("state");
       const storedState = localStorage.getItem("spotify_auth_state");
-      const error = searchParams.get("error");
+      const spotifyError = searchParams.get("error");
 
-      if (error) {
-        cleanup("Spotify auth failed. ${error}");
+      if (spotifyError) {
+        cleanup(`Spotify auth failed. ${spotifyError}`);
         return;
       }
 
       if (!returnedState || returnedState !== storedState) {
-        cleanup(`States do not match! Beware of CSRF attack.`);
+        cleanup("Returned state does not match stored state!");
         return;
       }
 
       if (!code) {
-        cleanup(`Auth code not returned.`);
+        cleanup("Auth code not returned.");
         return;
       }
 
       localStorage.removeItem("spotify_auth_state");
 
       try {
-        // perform code exchange w/ firebase functions
+        // TO-DO: setup and perform code exchange w/ firebase functions
 
         alert("Spotify connected successfully!");
-        navigate("/profile/");
+        navigate(`/profile/${auth.currentUser?.displayName}`);
       } catch (e: any) {
-        setError("Error during code exchange: ${e.message}");
-        setIsLoading(false);
+        setError(`Error during code exchange: ${e.message}`);
       }
+      setIsLoading(false);
     };
 
     handleCallback();
