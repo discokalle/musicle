@@ -17,6 +17,7 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Learn from "./pages/Learn";
+import SpotifyCallback from "./pages/SpotifyCallback";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -61,6 +62,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/learn" element={<Learn />} />
+        <Route path="/spotify-callback" element={<SpotifyCallback />} />
       </Routes>
     </Router>
   );

@@ -25,3 +25,4 @@ dist-ssr
 
 # API stuff
 src/firebase.tsx
+.env
