@@ -120,7 +120,7 @@ function SearchBar({
 
   const inputCSS =
     "w-full bg-primary text-neutral rounded-4xl shadow-md/25\
-     p-4 transition duration-250 focus:outline-none focus:ring-2 focus:ring-accent";
+    px-4 py-2 transition duration-250 focus:outline-none focus:ring-2 focus:ring-accent";
 
   const recsCSS = "absolute top-full w-full z-10 max-h-60 overflow-auto";
 

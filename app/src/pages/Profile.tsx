@@ -6,33 +6,71 @@ import SongCardStatic from "../components/SongCardStatic";
 
 import { useParams } from "react-router";
 import { ref, get, DataSnapshot } from "firebase/database";
+import { httpsCallable } from "firebase/functions";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-import { db } from "../firebase";
+import { auth, db, functions } from "../firebase";
 
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
 const SPOTIFY_SCOPES =
-  "user-read-private user-read-email playlist-read-private";
+  "user-read-private user-read-email playlist-read-private user-top-read";
+
+const callSpotifyApi = httpsCallable(functions, "callSpotifyApi");
 
 function Profile() {
   const { username } = useParams();
   const [userSnapshot, setUserSnapshot] = useState<DataSnapshot>();
+  const [hasSpotifyConnected, setHasSpoitfyConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [topTracks, setTopTracks] = useState<
+    { songName: string; artistName: string; albumName: string }[]
+  >([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const fetchTopTracks = async (fetchedUserSnapshot: DataSnapshot) => {
+      if (fetchedUserSnapshot?.val().spotify !== undefined) {
+        setHasSpoitfyConnected(true);
+
+        const res = await callSpotifyApi({
+          endpoint: "/v1/me/top/tracks",
+          method: "GET",
+          queryParams: {
+            limit: 5,
+            time_range: "short_term",
+          },
+        });
+
+        let topTracksList = [];
+        const data = res?.data as { items: any[] };
+        for (const item of data.items) {
+          topTracksList.push({
+            songName: item.name,
+            artistName: item.artists[0].name,
+            albumName: item.album.name,
+          });
+        }
+        setTopTracks(topTracksList);
+      } else {
+        setHasSpoitfyConnected(false);
+      }
+    };
+
     const fetchUser = async () => {
       setIsLoading(true);
       setError("");
+      setTopTracks([]);
       try {
         const snapshot = await get(ref(db, `usernames/${username}`));
         if (snapshot.exists()) {
           const userId = snapshot.val();
-          setUserSnapshot(await get(ref(db, `users/${userId}`)));
-        } else {
-          throw new Error("User does not exist.");
+
+          const fetchedUserSnapshot = await get(ref(db, `users/${userId}`));
+          setUserSnapshot(fetchedUserSnapshot);
+
+          fetchTopTracks(fetchedUserSnapshot);
         }
       } catch (e: any) {
         setError(e.message);
@@ -71,44 +109,37 @@ function Profile() {
     window.location.href = authUrl.toString();
   };
 
+  const handleDisconnectSpotify = () => {
+    // TO-DO
+    return;
+  };
+
   // MOCK DATA! NOTE: will load data from connected service here later
   // -------------------
-  const items = [
-    {
-      songName: "Bada Bastu",
-      artistName: "Kardu253",
-      albumName: "Teal Album 2500",
-    },
-    {
-      songName: "Morning sun",
-      artistName: "Isaha123",
-      albumName: "Green Album",
-    },
-    {
-      songName: "Åka båt",
-      artistName: "Jonsv",
-      albumName: "Norrland",
-    },
-  ];
   const songCardParams = { artist: "jon", title: "åka båt", cover: "" };
   const followers = ["albert", "herbert", "etc"];
   // -------------------
 
   const containerCSS =
-    "text-neutral absolute flex flex-col left-1/2 top-3/4 transform\
-  -translate-x-1/2 -translate-y-3/4 gap-5";
+    "w-[50%] text-neutral absolute flex flex-col left-[5%] top-[15%] gap-5";
 
   return (
     <div className={containerCSS}>
       <ProfileBanner userSnapshot={userSnapshot}></ProfileBanner>
 
-      <Button onClick={handleConnectSpotify}>Connect Spotify</Button>
+      {auth.currentUser?.uid == userSnapshot.key ? (
+        !hasSpotifyConnected ? (
+          <Button onClick={handleConnectSpotify}>Connect Spotify</Button>
+        ) : (
+          <div onClick={handleDisconnectSpotify}>Spotify connected!</div>
+        )
+      ) : null}
 
       <div className="flex flex-row gap-5 items-start">
         <div className="flex flex-col gap-3">
-          <h1 className="text-neutral text-2xl font-bold">Recent Streams</h1>
+          <h1 className="text-neutral text-2xl font-bold">Top Tracks</h1>
           <List>
-            {items.map((item, index) => (
+            {topTracks.map((item, index) => (
               <StreamListItem key={index} {...item}></StreamListItem>
             ))}
           </List>

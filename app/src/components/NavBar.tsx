@@ -31,14 +31,14 @@ function NavBar({ logo, colNames, isLoggedIn }: Props) {
   };
 
   const containerCSS =
-    "fixed top-0 z-50 w-full flex items-center justify-between px-8 py-4 bg-secondary";
+    "fixed top-0 h-[8%] z-50 w-full flex items-center justify-between px-8 py-2 bg-secondary";
 
   const navBarItemCSS =
     "text-neutral text-lg transition duration-250 hover:underline hover:text-accent";
 
   return (
     <div className={containerCSS}>
-      <img src={logo} alt="Logo" className="w-10 h-10" />
+      <img src={logo} alt="Logo" className="relative h-[80%]" />
       {isLoggedIn && (
         <SearchBar
           dbCollectionName="usernames"

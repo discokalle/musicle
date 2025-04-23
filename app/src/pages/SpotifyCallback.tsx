@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router";
-import { auth } from "../firebase";
+import { httpsCallable } from "firebase/functions";
+
+import { auth, functions } from "../firebase";
 
 function SpotifyCallback() {
   const navigate = useNavigate();
@@ -8,6 +10,8 @@ function SpotifyCallback() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const hasHandledCallback = useRef(false); // to only have the effect run once
+
+  const exchangeSpotifyCode = httpsCallable(functions, "exchangeSpotifyCode");
 
   useEffect(() => {
     const cleanup = (errorMsg: string) => {
@@ -43,18 +47,29 @@ function SpotifyCallback() {
       localStorage.removeItem("spotify_auth_state");
 
       try {
-        // TO-DO: setup and perform code exchange w/ firebase functions
+        console.log("Calling Firebase Function exchangeSpotifyCode...");
 
-        alert("Spotify connected successfully!");
-        navigate(`/profile/${auth.currentUser?.displayName}`);
+        const res = await exchangeSpotifyCode({ code: code });
+
+        console.log("Function result:", res.data);
+
+        if ((res.data as any)?.success) {
+          alert("Spotify connected successfully!");
+          navigate(`/profile/${auth.currentUser?.displayName}`);
+        } else {
+          const errorMessage =
+            (res.data as any)?.message || "An unknown error occurred.";
+          throw new Error(`Failed to connect Spotify: ${errorMessage}`);
+        }
       } catch (e: any) {
         setError(`Error during code exchange: ${e.message}`);
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     handleCallback();
-  }, [searchParams, navigate]);
+  }, [searchParams, navigate, exchangeSpotifyCode]);
 
   if (isLoading) {
     return <div>Connecting Spotify account...</div>;
