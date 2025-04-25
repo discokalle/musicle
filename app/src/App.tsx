@@ -15,8 +15,12 @@ import Welcome from "./pages/Welcome";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+import ProfileLayout from "./pages/ProfileLayout";
 import Profile from "./pages/Profile";
-import Learn from "./pages/Learn";
+import Following from "./pages/Following";
+import Followers from "./pages/Followers";
+import SpotifyStats from "./pages/SpotifyStats";
+import SpotifyCallback from "./pages/SpotifyCallback";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -24,13 +28,12 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const navColNames = [
-    "Sign Up",
-    "Login",
-    "Home",
-    "Learn",
-    "Profile",
-    "Sign Out",
+  const navCols: [string, string][] = [
+    ["Sign Up", "sign-up"],
+    ["Login", "login"],
+    ["Home", "home"],
+    ["Profile", "profile"],
+    ["Sign Out", "/"],
   ];
 
   useEffect(() => {
@@ -50,7 +53,7 @@ function App() {
       <div className={backgroundCSS}></div>
       <NavBar
         logo={supermanLogo}
-        colNames={navColNames}
+        cols={navCols}
         isLoggedIn={isLoggedIn}
       ></NavBar>
 
@@ -59,8 +62,13 @@ function App() {
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/profile/:username" element={<Profile />} />
-        <Route path="/learn" element={<Learn />} />
+        <Route path="/profile/:username" element={<ProfileLayout />}>
+          <Route path="overview" element={<Profile />} />
+          <Route path="following" element={<Following />} />
+          <Route path="followers" element={<Followers />} />
+          <Route path="stats" element={<SpotifyStats />} />
+        </Route>
+        <Route path="/spotify-callback" element={<SpotifyCallback />} />
       </Routes>
     </Router>
   );

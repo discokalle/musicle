@@ -12,15 +12,6 @@ type Props = {
 };
 
 function ProfileBanner({ userSnapshot }: Props) {
-  const bannerCSS =
-    "relative flex items-center gap-5 bg-secondary rounded-md\
-     object-cover px-4 py-3 shadow-md/25";
-  const usernameCSS = "text-3xl font-bold text-neutral";
-  const subtitleCSS = "text-lg text-gray-300";
-  // const statusSymbolCSS =
-  //   "absolute top-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2\
-  //    border-white transform translate-x-1/3 -translate-y-1/3 shadow-md/25";
-
   const loggedInUser = auth.currentUser;
   const targetUser = userSnapshot.val();
 
@@ -76,9 +67,15 @@ function ProfileBanner({ userSnapshot }: Props) {
     }
   };
 
+  const usernameCSS = "text-3xl font-bold text-neutral";
+  const subtitleCSS = "text-lg text-gray-300";
+  // const statusSymbolCSS =
+  //   "absolute top-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2\
+  //    border-white transform translate-x-1/3 -translate-y-1/3 shadow-md/25";
+
   return (
     // profile picture, username and description will be loaded dynamically eventually...
-    <div className={bannerCSS}>
+    <div className="panel-card relative flex items-center gap-5">
       <div className="relative">
         <img
           src={targetUser.profilePicture || defaultProfilePic}
@@ -96,6 +93,7 @@ function ProfileBanner({ userSnapshot }: Props) {
         <RoundButton
           size="small"
           className="absolute top-4 right-4"
+          title={isFollowing ? "Unfollow" : "Follow"}
           onClick={handleBtnClick}
         >
           {isFollowing ? "–" : "+"}

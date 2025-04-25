@@ -1,11 +1,18 @@
 type Props = {
   children: React.ReactNode;
   className?: string;
+  title?: string;
   onClick?: () => void;
   size?: "small" | "medium" | "large";
 };
 
-function RoundButton({ children, className, onClick, size = "medium" }: Props) {
+function RoundButton({
+  children,
+  className,
+  title,
+  onClick,
+  size = "medium",
+}: Props) {
   const sizeClasses = {
     small: { wh: "w-8 h-8", text: "text-md" },
     medium: { wh: "w-12 h-12", text: "text-lg" },
@@ -21,7 +28,7 @@ function RoundButton({ children, className, onClick, size = "medium" }: Props) {
                 transition-all duration-250 ease-in-out cursor-pointer`;
 
   return (
-    <button className={CSS} onClick={onClick}>
+    <button title={title} className={CSS} onClick={onClick}>
       {children}
     </button>
   );

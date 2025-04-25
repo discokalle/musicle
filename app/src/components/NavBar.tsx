@@ -5,21 +5,13 @@ import { signOut } from "firebase/auth";
 
 import { auth } from "../firebase";
 
-function getPageLink(colName: string): string {
-  if (colName === "Sign Out") return "/";
-  if (colName === "Profile") {
-    return "/profile/" + (auth.currentUser?.displayName || "unknown-user");
-  }
-  return colName.toLowerCase().replace(" ", "-");
-}
-
 type Props = {
   logo: string;
-  colNames: string[];
+  cols: [string, string][];
   isLoggedIn: boolean;
 };
 
-function NavBar({ logo, colNames, isLoggedIn }: Props) {
+function NavBar({ logo, cols, isLoggedIn }: Props) {
   const location = useLocation();
 
   const handleSignOut = async () => {
@@ -31,14 +23,11 @@ function NavBar({ logo, colNames, isLoggedIn }: Props) {
   };
 
   const containerCSS =
-    "fixed top-0 z-50 w-full flex items-center justify-between px-8 py-4 bg-secondary";
-
-  const navBarItemCSS =
-    "text-neutral text-lg transition duration-250 hover:underline hover:text-accent";
+    "fixed top-0 h-[8%] z-50 w-full flex items-center justify-between px-8 py-2 bg-secondary";
 
   return (
     <div className={containerCSS}>
-      <img src={logo} alt="Logo" className="w-10 h-10" />
+      <img src={logo} alt="Logo" className="relative h-[75%]" />
       {isLoggedIn && (
         <SearchBar
           dbCollectionName="usernames"
@@ -46,23 +35,26 @@ function NavBar({ logo, colNames, isLoggedIn }: Props) {
         ></SearchBar>
       )}
       <div className="flex gap-12">
-        {colNames.map((colName) => {
-          const link = getPageLink(colName);
+        {cols.map(([colName, colLink]) => {
           if (
-            (isLoggedIn && (colName === "Login" || colName === "Sign Up")) ||
-            (!isLoggedIn && !(colName === "Login" || colName === "Sign Up"))
+            (isLoggedIn && (colLink === "login" || colLink === "sign-up")) ||
+            (!isLoggedIn && !(colLink === "login" || colLink === "sign-up"))
           ) {
             return null;
           }
-          const isActive = location.pathname === link;
           return (
             <Link
               key={colName}
-              to={link}
-              className={`${navBarItemCSS} ${
-                isActive ? "underline font-bold" : ""
+              to={
+                colLink !== "profile"
+                  ? colLink
+                  : colLink + "/" + auth.currentUser?.displayName ||
+                    "unknown-user"
+              }
+              className={`link-highlight text-lg ${
+                location.pathname === colLink ? "underline font-bold" : ""
               }`}
-              onClick={colName === "Sign Out" ? handleSignOut : undefined}
+              onClick={colLink === "sign-out" ? handleSignOut : undefined}
             >
               {colName}
             </Link>

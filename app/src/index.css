@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
+/* @tailwind base;
+@tailwind components; */
 @tailwind utilities;
 
 @theme {
@@ -12,6 +12,15 @@
 }
 
 @layer utilities {
+  .panel-card {
+    @apply bg-secondary rounded-md
+    object-cover px-4 py-3 shadow-md/25;
+  }
+
+  .link-highlight {
+    @apply text-neutral transition duration-250 hover:underline hover:text-accent;
+  }
+
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
@@ -19,4 +28,19 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+}
+
+html,
+body {
+  min-height: 100vh;
+  /* height: 100%; */
+  background-color: var(--color-primary);
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  min-height: 100vh;
+  /* display: flex;
+  flex-direction: column; */
 }
