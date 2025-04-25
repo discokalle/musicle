@@ -8,13 +8,7 @@ type Props = {
 function List({ children, className }: Props) {
   return (
     <>
-      <ul className={`${className} list-group space-y-2`}>
-        {React.Children.count(children) > 0 ? (
-          children
-        ) : (
-          <li>No Item Found.</li>
-        )}
-      </ul>
+      <ul className={`${className} list-group space-y-2`}>{children}</ul>
     </>
   );
 }

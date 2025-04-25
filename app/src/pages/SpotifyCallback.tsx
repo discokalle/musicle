@@ -47,11 +47,7 @@ function SpotifyCallback() {
       localStorage.removeItem("spotify_auth_state");
 
       try {
-        console.log("Calling Firebase Function exchangeSpotifyCode...");
-
         const res = await exchangeSpotifyCode({ code: code });
-
-        console.log("Function result:", res.data);
 
         if ((res.data as any)?.success) {
           alert("Spotify connected successfully!");
