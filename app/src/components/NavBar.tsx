@@ -54,7 +54,7 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
               className={`link-highlight text-lg ${
                 location.pathname === colLink ? "underline font-bold" : ""
               }`}
-              onClick={colLink === "sign-out" ? handleSignOut : undefined}
+              onClick={colLink === "/" ? handleSignOut : undefined}
             >
               {colName}
             </Link>

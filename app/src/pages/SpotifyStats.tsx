@@ -36,7 +36,7 @@ function SpotifyStats() {
         },
       });
 
-      console.log(res.data);
+      // console.log(res.data);
 
       let topTracksList = [];
       const data = res?.data as { items: any[] };
