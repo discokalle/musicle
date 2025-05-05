@@ -21,6 +21,7 @@ import Following from "./pages/Following";
 import Followers from "./pages/Followers";
 import SpotifyStats from "./pages/SpotifyStats";
 import SpotifyCallback from "./pages/SpotifyCallback";
+import Quiz from "./pages/Quiz";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -34,6 +35,7 @@ function App() {
     ["Home", "home"],
     ["Profile", "profile"],
     ["Sign Out", "/"],
+    ["Quiz", "quiz"],
   ];
 
   useEffect(() => {
@@ -69,6 +71,7 @@ function App() {
           <Route path="stats" element={<SpotifyStats />} />
         </Route>
         <Route path="/spotify-callback" element={<SpotifyCallback />} />
+        <Route path="/quiz" element={<Quiz />} />
       </Routes>
     </Router>
   );
