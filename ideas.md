@@ -4,17 +4,19 @@
 
 ### To-do's (in order of priority)
 
-- Add a proper loading animation
-
-- Add profile picture upload option for users
-
 - Games/social features:
 
   - Music quiz that is generated based on the users preferences
   - Queue for in-person listening sessions with voting
   - (Minigames like "guess the song based on the lyrics")
 
-- In the end, go through and remove console logs (at least those exposing private info)
+- Add a proper loading animation
+
+- Add profile picture upload option for users
+
+- In the end:
+  - Polish the design parts and select a suitable theme
+  - Go through and remove console logs (at least those exposing private info)
 
 ## API resources
 

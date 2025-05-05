@@ -13,7 +13,8 @@ import { auth, db } from "../firebase";
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
 const SPOTIFY_SCOPES =
-  "user-read-private user-read-email playlist-read-private user-top-read";
+  "user-read-private user-read-email playlist-read-private user-top-read \
+  user-read-playback-state user-modify-playback-state user-read-currently-playing";
 
 function ProfileLayout() {
   const { username } = useParams();
@@ -95,6 +96,11 @@ function ProfileLayout() {
       <div className="flex justify-between gap-8">
         <div className="panel-card flex items-center justify-between flex-grow">
           {subsecs.map(([secName, secLink]) => {
+            if (
+              userSnapshot.key != auth?.currentUser?.uid &&
+              secName == "Stats"
+            )
+              return null;
             return (
               <Link
                 key={secName}

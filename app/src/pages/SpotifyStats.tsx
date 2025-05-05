@@ -31,7 +31,7 @@ function SpotifyStats() {
         endpoint: "/v1/me/top/tracks",
         method: "GET",
         queryParams: {
-          limit: 20,
+          limit: 5,
           time_range: "short_term",
         },
       });

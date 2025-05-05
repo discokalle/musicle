@@ -21,6 +21,7 @@ import Following from "./pages/Following";
 import Followers from "./pages/Followers";
 import SpotifyStats from "./pages/SpotifyStats";
 import SpotifyCallback from "./pages/SpotifyCallback";
+import Queue from "./pages/Queue";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -32,6 +33,7 @@ function App() {
     ["Sign Up", "sign-up"],
     ["Login", "login"],
     ["Home", "home"],
+    ["Queue", "queue"],
     ["Profile", "profile"],
     ["Sign Out", "/"],
   ];
@@ -69,6 +71,7 @@ function App() {
           <Route path="stats" element={<SpotifyStats />} />
         </Route>
         <Route path="/spotify-callback" element={<SpotifyCallback />} />
+        <Route path="/queue" element={<Queue />}></Route>
       </Routes>
     </Router>
   );
