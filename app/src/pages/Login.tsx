@@ -23,7 +23,10 @@ function Login() {
           const userSnapshot = await get(ref(db, `users/${userId}`));
           emailAddr = userSnapshot.val().email;
         }
-      } catch (e: any) {}
+      } catch (e: any) {
+        alert(`Could not find user ${email}`);
+        return;
+      }
 
       await signInWithEmailAndPassword(auth, emailAddr, password);
       navigate("/home");

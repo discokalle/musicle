@@ -1,12 +1,16 @@
 import * as admin from "firebase-admin";
-import { CallableRequest, HttpsError, onCall } from "firebase-functions/https";
+import {
+  CallableRequest,
+  HttpsError,
+  onCall,
+} from "firebase-functions/v2/https";
 import { _callSpotifyApi } from "./spotify";
 
-import {
-  spotifyClientIdVar,
-  spotifyRedirectUriVar,
-  spotifyClientSecretVar,
-} from "./config";
+// import {
+//   spotifyClientIdVar,
+//   spotifyRedirectUriVar,
+//   spotifyClientSecretVar,
+// } from "./config";
 
 const db = admin.database();
 
@@ -31,12 +35,18 @@ export const createSession = onCall(async (req) => {
   }
 
   try {
-    const sessionRef = db.ref("session").push();
+    // console.log("SERVER: entered try");
+    const sessionRef = db.ref("sessions").push();
+    // console.log("SERVER: sessionRef", sessionRef);
     const sessionId = sessionRef.key;
+    // console.log("SERVER: sessionId", sessionId);
+    // console.log("SERVER: hostUserId", hostUserId);
+    // console.log("SERVER: createdAt", Date.now());
 
     await sessionRef.set({
       hostUserId: hostUserId,
-      createdAt: admin.database.ServerValue.TIMESTAMP,
+      // createdAt: admin.database.ServerValue.TIMESTAMP,
+      createdAt: Date.now(),
       participants: {
         [hostUserId]: true,
       },
@@ -76,7 +86,7 @@ export const joinSession = onCall(async (req) => {
 
     console.log(`User ${userId} joined session ${sessionId}`);
 
-    return { success: true, message: "Joined session successfully." };
+    return { success: true };
   } catch (e: any) {
     if (e instanceof HttpsError) throw e;
     throw new HttpsError("internal", "Failed to join session.", e.message);
