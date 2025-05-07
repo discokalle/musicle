@@ -1,0 +1,121 @@
+import { useState, useEffect, useRef } from "react";
+
+import List from "./List";
+
+type Props = {
+  apiCall: Function; // a function that makes the api call and returns the results
+  matchLogic: Function; // the logic to be used when we search for a query that matches the DB
+  renderRec: (rec: any) => React.ReactNode; // the logic for how to render each item in the results
+  inputPlaceholderText: string;
+  className?: string;
+};
+
+function SearchBarApi({
+  apiCall,
+  matchLogic,
+  renderRec,
+  inputPlaceholderText,
+  className,
+}: Props) {
+  const [input, setInput] = useState("");
+  const [recs, setRecs] = useState<any[]>([]); // recs = recommendations
+  const [showRecs, setShowRecs] = useState(false);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+
+  const handleMatchAndCleanup = (matchQuery: string) => {
+    setInput(matchQuery);
+    setRecs([]);
+    setShowRecs(false);
+    matchLogic(matchQuery);
+    setInput("");
+  };
+
+  useEffect(() => {
+    const fetchRecs = async (prefix: string) => {
+      try {
+        const res = await apiCall(prefix);
+        const results = res?.data?.results || [];
+
+        console.log(results);
+
+        setRecs(results);
+        setShowRecs(true);
+      } catch (e: any) {
+        // alert(`Fetching error: ${e.message}`);
+        console.log(`Fetching error: ${e.message}`);
+        setRecs([]);
+        setShowRecs(false);
+      }
+    };
+
+    if (input.trim() === "") {
+      setRecs([]);
+      setShowRecs(false);
+      return;
+    }
+
+    fetchRecs(input);
+  }, [input]);
+
+  const handleRecClick = (selectedInput: string) => {
+    handleMatchAndCleanup(selectedInput);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchBarRef.current &&
+        !searchBarRef.current.contains(event.target as Node)
+      ) {
+        setShowRecs(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside); // cleanup
+    };
+  }, []);
+
+  const containerCSS = `${className} relative w-100`;
+
+  const inputCSS =
+    "w-full bg-primary text-neutral rounded-4xl shadow-md/25\
+    px-4 py-2 transition duration-250 focus:outline-none focus:ring-2 focus:ring-accent";
+
+  const recsCSS = "absolute top-full w-full z-10 max-h-60 overflow-auto";
+
+  const recItemCSS =
+    "bg-secondary shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
+
+  return (
+    <div className={containerCSS} ref={searchBarRef}>
+      <input
+        type="text"
+        placeholder={inputPlaceholderText}
+        className={inputCSS}
+        value={input}
+        onChange={(text) => {
+          setInput(text.target.value);
+        }}
+        onFocus={() => input.trim() && recs.length > 0 && setShowRecs(true)}
+      ></input>
+
+      {showRecs && recs.length > 0 && (
+        <List className={recsCSS}>
+          {recs.map((rec) => (
+            <li
+              key={rec.uri}
+              onClick={() => handleRecClick(rec)}
+              className={recItemCSS}
+            >
+              {renderRec(rec)}
+            </li>
+          ))}
+        </List>
+      )}
+    </div>
+  );
+}
+
+export default SearchBarApi;

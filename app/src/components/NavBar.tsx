@@ -1,6 +1,6 @@
-import SearchBar from "../components/SearchBar";
+import SearchBarDb from "./SearchBarDb";
 
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { signOut } from "firebase/auth";
 
 import { auth } from "../firebase";
@@ -12,6 +12,7 @@ type Props = {
 };
 
 function NavBar({ logo, cols, isLoggedIn }: Props) {
+  const navigate = useNavigate();
   const location = useLocation();
 
   const handleSignOut = async () => {
@@ -22,6 +23,10 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
     }
   };
 
+  const searchBarMatchLogic = (matchQuery: string) => {
+    navigate(`/profile/${matchQuery}`);
+  };
+
   const containerCSS =
     "fixed top-0 h-[8%] z-50 w-full flex items-center justify-between px-8 py-2 bg-secondary";
 
@@ -29,10 +34,11 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
     <div className={containerCSS}>
       <img src={logo} alt="Logo" className="relative h-[75%]" />
       {isLoggedIn && (
-        <SearchBar
+        <SearchBarDb
           dbCollectionName="usernames"
+          matchLogic={searchBarMatchLogic}
           inputPlaceholderText="Search for a user..."
-        ></SearchBar>
+        ></SearchBarDb>
       )}
       <div className="flex gap-12">
         {cols.map(([colName, colLink]) => {

@@ -1,10 +1,12 @@
 import { useNavigate, useParams } from "react-router";
 import { useEffect, useRef, useState } from "react";
+import { off, onValue, ref, set, update } from "firebase/database";
+import { httpsCallable } from "firebase/functions";
 
 import Button from "../components/Button";
+import SearchBarApi from "../components/SearchBarApi";
 
-import { auth, db } from "../firebase";
-import { off, onValue, ref, set, update } from "firebase/database";
+import { auth, db, functions } from "../firebase";
 
 interface SessionData {
   hostUserId: string;
@@ -13,6 +15,11 @@ interface SessionData {
   createdAt: number;
   isEnded?: boolean;
 }
+
+const searchSpotifyTracks = httpsCallable<
+  { sessionId: string; query: string },
+  { results: any } // make more specific later
+>(functions, "searchSpotifyTracks");
 
 function QueueSession() {
   const navigate = useNavigate();
@@ -37,7 +44,7 @@ function QueueSession() {
     const unsubscribe = onValue(
       sessionRef,
       (snapshot) => {
-        // handles when the host's session deletion timeout has finished
+        // hasNavigatedRef handles when the host's session deletion timeout has finished
         // (to avoid sending multiple alerts after redirecting)
         if (hasNavigatedRef.current) {
           return;
@@ -83,6 +90,10 @@ function QueueSession() {
     const isConfirmed = window.confirm("End session?");
     if (isConfirmed) {
       try {
+        await set(
+          ref(db, `users/${auth.currentUser?.uid}/hostingSessionId`),
+          null
+        );
         await update(ref(db, `sessions/${sessionId}`), { isEnded: true });
 
         // delete session from DB w/ 5 second delay
@@ -103,12 +114,24 @@ function QueueSession() {
     return <div>Error: {error}</div>;
   }
 
-  if (!sessionData) {
+  if (!sessionData || !sessionId) {
     return <div>Session not found</div>;
   }
 
+  const searchBarApiCall = async (query: string) => {
+    const res = await searchSpotifyTracks({ sessionId, query });
+    return res;
+  };
+
+  const searchBarMatchLogic = async () => {};
+
+  const searchBarRenderRec = (rec: any) => {
+    return <div>{rec.name + " – " + rec.artist.name}</div>;
+  };
+
   const centerContainerCSS =
-    "absolute flex flex-col gap-7 items-center left-1/2 top-[40%] transform -translate-x-1/2";
+    "absolute flex flex-col gap-7 items-center left-1/2 top-[25%] transform -translate-x-1/2 bg-secondary \
+     p-10 rounded-md";
 
   const titleCSS =
     "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
@@ -122,6 +145,12 @@ function QueueSession() {
         </span>
       </h1>
       <p className="text-neutral text-xl"></p>
+      <SearchBarApi
+        apiCall={searchBarApiCall}
+        matchLogic={searchBarMatchLogic}
+        renderRec={searchBarRenderRec}
+        inputPlaceholderText="Search for a track..."
+      ></SearchBarApi>
       {isHost ? <Button onClick={handleEndSession}>End Session</Button> : null}
     </div>
   );

@@ -43,6 +43,8 @@ export const createSession = onCall(async (req) => {
     // console.log("SERVER: hostUserId", hostUserId);
     // console.log("SERVER: createdAt", Date.now());
 
+    await db.ref(`users/${hostUserId}/hostingSessionId`).set(sessionId);
+
     await sessionRef.set({
       hostUserId: hostUserId,
       // createdAt: admin.database.ServerValue.TIMESTAMP,
@@ -121,7 +123,7 @@ export const searchSpotifyTracks = onCall(async (req) => {
     }
 
     const sessionData = sessionSnapshot.val();
-    if (!sessionData.participants || !sessionData[callerUserId]) {
+    if (!sessionData.participants || !sessionData.participants[callerUserId]) {
       throw new HttpsError(
         "permission-denied",
         "You are not a participant in this session."
@@ -142,7 +144,7 @@ export const searchSpotifyTracks = onCall(async (req) => {
         queryParams: {
           q: query,
           type: "track",
-          limit: 5,
+          limit: 5 + 1,
         },
         method: "GET",
         targetUserId: hostUserId,

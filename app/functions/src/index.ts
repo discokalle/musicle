@@ -1,10 +1,12 @@
 import { setGlobalOptions } from "firebase-functions/v2";
 import * as admin from "firebase-admin";
 
-// important that this is called before the other function file imports!
+// IMPORTANT: the following must be run before importing other firebase function files
+// ----
 admin.initializeApp();
 import { spotifyClientSecretVar } from "./config";
 setGlobalOptions({ region: "europe-west1", secrets: [spotifyClientSecretVar] });
+// ----
 
 import * as spotify from "./spotify";
 import * as queue from "./queue";

@@ -3,8 +3,9 @@ import Button from "../components/Button";
 import { useLocation, useNavigate } from "react-router";
 import { httpsCallable } from "firebase/functions";
 
-import { functions } from "../firebase";
-import { useEffect } from "react";
+import { auth, db, functions } from "../firebase";
+import { useEffect, useState } from "react";
+import { get, ref } from "firebase/database";
 
 const createSession = httpsCallable<{}, { sessionId: string }>(
   functions,
@@ -18,11 +19,15 @@ const joinSession = httpsCallable<{ sessionId: string }, { success: boolean }>(
 function Queue() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // handles alert passed from QueueSession (e.g., to alert the user that
-  // the host ended the session)
   useEffect(() => {
+    setIsLoading(true);
+
+    // handles alert passed from QueueSession (e.g., to alert the user that
+    // the host ended the session)
     if (location.state?.message) {
+      // alert w/ small delay to allow re-navigation to complete
       const timerId = setTimeout(() => {
         alert(location.state.message);
         navigate(location.pathname, { replace: true, state: {} }); // reset state to avoid re-alerting
@@ -30,6 +35,24 @@ function Queue() {
 
       return () => clearTimeout(timerId);
     }
+
+    const handleIfUserIsHosting = async () => {
+      try {
+        const snapshot = await get(
+          ref(db, `users/${auth.currentUser?.uid}/hostingSessionId`)
+        );
+
+        if (snapshot.exists()) {
+          navigate(snapshot.val());
+        }
+      } catch (e: any) {
+        console.log("Error:", e.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    handleIfUserIsHosting();
   }, [location.state?.message, navigate]);
 
   const handleCreateSession = async () => {
@@ -48,17 +71,13 @@ function Queue() {
       console.log(e.code, e.message);
     }
   };
+
   const handleJoinSession = async () => {
     const sessionIdInput = window.prompt(
       "Please enter the Session ID to join:"
     );
 
-    if (sessionIdInput === null) {
-      return;
-    }
-
-    if (sessionIdInput.trim() === "") {
-      alert("Invalid Session ID. Please try again.");
+    if (sessionIdInput === null || sessionIdInput.trim() === "") {
       return;
     }
 
@@ -74,6 +93,10 @@ function Queue() {
       alert(`An error occurred while attempting to connect: ${e.message}`);
     }
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   const centerContainerCSS =
     "absolute flex flex-col gap-7 items-center left-1/2 top-[40%] transform -translate-x-1/2";
