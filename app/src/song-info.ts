@@ -8,6 +8,7 @@ export type SongInfo = {
   artistBeginYear?: string;
 };
 
+//ISRC codes seem to be universal across services for recordings.
 export async function getInfoByISRC(isrc: string): Promise<SongInfo | null> {
   const res = await fetch(
     `https://musicbrainz.org/ws/2/recording?query=isrc:${isrc}&fmt=json`

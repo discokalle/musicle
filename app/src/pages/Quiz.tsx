@@ -1,40 +1,57 @@
 import { useEffect, useState } from "react";
-import { getInfoByISRC, SongInfo } from "../song-info";
+import { getInfoByISRC } from "../song-info";
 import QuizCard, { Question } from "../components/QuizCard";
 import { generateQuestions } from "../question-generator";
 
+//ISRC codes seem to be universal across services for recordings.
+const ISRCs = [
+  "GBN9Y1100088",
+  "USSM17700373",
+  "SEPQA2500011",
+  "GBAYE0601696",
+  "USUG11500737",
+];
+
+function randomPick(array: Question[], count: number): Question[] {
+  return [...array].sort(() => 0.5 - Math.random()).slice(0, count);
+}
+function shuffle(array: Question[]): Question[] {
+  return [...array].sort(() => 0.5 - Math.random());
+}
+
 function Quiz() {
-  const [song, setSong] = useState<SongInfo | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getInfoByISRC("SEPQA2500011").then(setSong); //ISRC is probably universal across services? Many apis / services seem to have this code for songs.
+    async function loadQuestions() {
+      const finalQuestions: Question[] = [];
+
+      for (const isrc of ISRCs) {
+        const song = await getInfoByISRC(isrc);
+        if (song) {
+          const generated = generateQuestions(song);
+          const selected = randomPick(generated, 2);
+          finalQuestions.push(...selected);
+        }
+      }
+      setQuestions(shuffle(finalQuestions));
+      setLoading(false);
+    }
+
+    loadQuestions();
   }, []);
 
   const centerContainerCSS =
     "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2";
 
-  const titleCSS =
-    "text-3xl text-white text-center transition-transform duration-200 ease-in-out hover:scale-110";
-
-  const questions: Question[] = song ? generateQuestions(song) : [];
-
   return (
     <div className={centerContainerCSS}>
-      <h1 className={titleCSS}>Song Info Quiz</h1>
-      {song ? (
-        <>
-          <p className="text-neutral">Title: {song.title}</p>
-          <p className="text-neutral">Artist: {song.artist}</p>
-          <p className="text-neutral">First Release Date: {song.releaseDate}</p>
-          <p className="text-neutral">
-            Formed/born in: {song.artistBeginArea}, {song.artistBeginYear}
-          </p>
-          <p className="text-neutral"> Active in: {song.artistActiveArea} </p>
-        </>
-      ) : (
+      {loading ? (
         <p className="text-neutral">Loading...</p>
+      ) : (
+        <QuizCard questions={questions} />
       )}
-      <QuizCard questions={questions} />
     </div>
   );
 }
