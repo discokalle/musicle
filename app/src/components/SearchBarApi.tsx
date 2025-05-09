@@ -31,16 +31,27 @@ function SearchBarApi({
   };
 
   useEffect(() => {
+    // used to mark/cancel stale fetchRecs calls (e.g., if an earlier call
+    // finishes after a subsequent call, to avoid that we render the earlier
+    // calls results)
+    let isCancelled = false;
+
+    // debouce used to avoid making too many API calls if text changes quickly
+    let debouceTimeout: NodeJS.Timeout | undefined = undefined;
+
     const fetchRecs = async (prefix: string) => {
       try {
+        console.log(prefix);
         const res = await apiCall(prefix);
+
+        if (isCancelled) return;
+
         const results = res?.data?.results || [];
 
-        console.log(results);
-
         setRecs(results);
-        setShowRecs(true);
+        setShowRecs(results.length > 0); // shows recs if there were any results
       } catch (e: any) {
+        if (isCancelled) return;
         // alert(`Fetching error: ${e.message}`);
         console.log(`Fetching error: ${e.message}`);
         setRecs([]);
@@ -48,14 +59,23 @@ function SearchBarApi({
       }
     };
 
+    if (debouceTimeout) clearTimeout(debouceTimeout);
+
     if (input.trim() === "") {
       setRecs([]);
       setShowRecs(false);
-      return;
+      isCancelled = true;
+    } else {
+      debouceTimeout = setTimeout(() => {
+        if (!isCancelled) fetchRecs(input);
+      }, 300);
     }
 
-    fetchRecs(input);
-  }, [input]);
+    return () => {
+      isCancelled = true;
+      clearTimeout(debouceTimeout);
+    };
+  }, [input, apiCall]);
 
   const handleRecClick = (selectedInput: string) => {
     handleMatchAndCleanup(selectedInput);
@@ -96,7 +116,14 @@ function SearchBarApi({
         className={inputCSS}
         value={input}
         onChange={(text) => {
-          setInput(text.target.value);
+          const val = text.target.value;
+          setInput(val);
+
+          if (val.trim() === "") {
+            setRecs([]);
+            setShowRecs(false);
+            return;
+          }
         }}
         onFocus={() => input.trim() && recs.length > 0 && setShowRecs(true)}
       ></input>

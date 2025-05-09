@@ -32,6 +32,12 @@ function SearchBarDb({
   const searchBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (input.trim() === "") {
+      setRecs([]);
+      setShowRecs(false);
+      return;
+    }
+
     const fetchRecs = async (prefix: string) => {
       try {
         const searchQuery = query(
@@ -57,12 +63,6 @@ function SearchBarDb({
         setShowRecs(false);
       }
     };
-
-    if (input.trim() === "") {
-      setRecs([]);
-      setShowRecs(false);
-      return;
-    }
 
     fetchRecs(input);
   }, [input]);
