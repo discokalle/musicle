@@ -191,6 +191,9 @@ export const addTrackToQueue = onCall(async (req) => {
 
   const sessionId: string = req.data.sessionId;
   const trackData: TrackData = req.data.trackData;
+
+  console.log(sessionId, trackData);
+
   if (!sessionId || typeof sessionId !== "string") {
     throw new HttpsError("invalid-argument", "Missing or invalid sessionId.");
   }

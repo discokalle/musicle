@@ -15,6 +15,7 @@
 - Add profile picture upload option for users
 
 - In the end:
+  - Update RTDB rules
   - Polish the design parts and select a suitable theme
   - Go through and remove console logs (at least those exposing private info)
 

@@ -22,18 +22,17 @@ function SearchBarApi({
   const [showRecs, setShowRecs] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
-  const handleMatchAndCleanup = (matchQuery: string) => {
-    setInput(matchQuery);
+  const handleMatchAndCleanup = (rec: any) => {
     setRecs([]);
     setShowRecs(false);
-    matchLogic(matchQuery);
+    matchLogic(rec);
     setInput("");
   };
 
   useEffect(() => {
-    // used to mark/cancel stale fetchRecs calls (e.g., if an earlier call
+    // used to mark/cancel stale fetchRecs calls (e.g., if an earlier async call
     // finishes after a subsequent call, to avoid that we render the earlier
-    // calls results)
+    // call's results)
     let isCancelled = false;
 
     // debouce used to avoid making too many API calls if text changes quickly
@@ -130,9 +129,9 @@ function SearchBarApi({
 
       {showRecs && recs.length > 0 && (
         <List className={recsCSS}>
-          {recs.map((rec) => (
+          {recs.map((rec, index) => (
             <li
-              key={rec.uri}
+              key={index}
               onClick={() => handleRecClick(rec)}
               className={recItemCSS}
             >

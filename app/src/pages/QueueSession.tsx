@@ -126,12 +126,12 @@ function QueueSession() {
     return res;
   };
 
-  const searchBarMatchLogic = async (
-    sessionId: string,
-    trackData: TrackData
-  ) => {
-    const res = await addTrackToQueue({ sessionId, trackData });
-    return res;
+  const searchBarMatchLogic = async (recTrackData: TrackData) => {
+    try {
+      await addTrackToQueue({ sessionId, trackData: recTrackData });
+    } catch (e: any) {
+      console.log(`An error occurred during the match logic: ${e.message}`);
+    }
   };
 
   const searchBarRenderRec = (rec: any) => {
