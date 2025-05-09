@@ -6,20 +6,22 @@ import { httpsCallable } from "firebase/functions";
 import Button from "../components/Button";
 import SearchBarApi from "../components/SearchBarApi";
 
-import { auth, db, functions } from "../firebase";
+import { SessionData, TrackData } from "../types";
 
-interface SessionData {
-  hostUserId: string;
-  participants: Record<string, boolean>;
-  queue: Record<string, any>;
-  createdAt: number;
-  isEnded?: boolean;
-}
+import { auth, db, functions } from "../firebase";
 
 const searchSpotifyTracks = httpsCallable<
   { sessionId: string; query: string },
-  { results: any } // make more specific later
+  { results: TrackData }
 >(functions, "searchSpotifyTracks");
+
+const addTrackToQueue = httpsCallable<
+  {
+    sessionId: string;
+    trackData: TrackData;
+  },
+  { success: boolean; queueItemId: string }
+>(functions, "addTrackToQueue");
 
 function QueueSession() {
   const navigate = useNavigate();
@@ -84,6 +86,19 @@ function QueueSession() {
     };
   }, [sessionId, navigate]);
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error.trim() !== "") {
+    return <div>Error: {error}</div>;
+  }
+
+  // console.log(sessionData, sessionId);
+  if (!sessionData || !sessionId) {
+    return <div>Session not found</div>;
+  }
+
   const handleEndSession = async () => {
     // only the host can press the connected button,
     // so we know that the user here is the host
@@ -106,44 +121,52 @@ function QueueSession() {
     }
   };
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error.trim() !== "") {
-    return <div>Error: {error}</div>;
-  }
-
-  if (!sessionData || !sessionId) {
-    return <div>Session not found</div>;
-  }
-
   const searchBarApiCall = async (query: string) => {
     const res = await searchSpotifyTracks({ sessionId, query });
     return res;
   };
 
-  const searchBarMatchLogic = async () => {};
+  const searchBarMatchLogic = async (
+    sessionId: string,
+    trackData: TrackData
+  ) => {
+    const res = await addTrackToQueue({ sessionId, trackData });
+    return res;
+  };
 
   const searchBarRenderRec = (rec: any) => {
     return <div>{rec.name + " – " + rec.artist.name}</div>;
+  };
+
+  const handleCopySessionId = async () => {
+    if (!sessionId) return;
+
+    try {
+      await navigator.clipboard.writeText(sessionId);
+      alert("Successfully copied session ID.");
+    } catch (e: any) {
+      alert("Failed to copy session ID.");
+    }
   };
 
   const centerContainerCSS =
     "absolute flex flex-col gap-7 items-center left-1/2 top-[25%] transform -translate-x-1/2 bg-secondary \
      p-10 rounded-md";
 
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
+  const titleCSS = "text-5xl text-neutral text-center";
 
   return (
     <div className={centerContainerCSS}>
-      <h1 className={titleCSS}>
-        Queue Session ID{" "}
-        <span className="italic text-accent font-bold">
+      <div className={titleCSS}>
+        <h1>Queue Session ID</h1>
+        <h1
+          className="italic text-accent font-bold cursor-pointer link-highlight"
+          onClick={handleCopySessionId}
+          title="Copy session ID?"
+        >
           {sessionId || "??"}
-        </span>
-      </h1>
+        </h1>
+      </div>
       <p className="text-neutral text-xl"></p>
       <SearchBarApi
         apiCall={searchBarApiCall}

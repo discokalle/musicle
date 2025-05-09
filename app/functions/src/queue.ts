@@ -6,6 +6,8 @@ import {
 } from "firebase-functions/v2/https";
 import { _callSpotifyApi } from "./spotify";
 
+import { TrackData } from "../../src/types";
+
 // import {
 //   spotifyClientIdVar,
 //   spotifyRedirectUriVar,
@@ -164,7 +166,7 @@ export const searchSpotifyTracks = onCall(async (req) => {
         name: item.name,
         artist: item.artists[0],
         albumCoverUrl: item.album?.images?.[0]?.url,
-      };
+      } as TrackData;
     });
 
     return { results: extractedTrackData };
@@ -187,19 +189,18 @@ export const addTrackToQueue = onCall(async (req) => {
   }
   const suggesterUid = req.auth.uid;
 
-  const { sessionId, trackUri, trackName, artistName, albumCoverUrl } =
-    req.data;
+  const sessionId: string = req.data.sessionId;
+  const trackData: TrackData = req.data.trackData;
   if (!sessionId || typeof sessionId !== "string") {
     throw new HttpsError("invalid-argument", "Missing or invalid sessionId.");
   }
-  if (!trackUri || typeof trackUri !== "string") {
+  if (!trackData.uri || typeof trackData.uri !== "string") {
     throw new HttpsError("invalid-argument", "Missing or invalid trackUri.");
   }
-  if (!trackName || typeof trackName !== "string") {
+  if (!trackData.name || typeof trackData.name !== "string") {
     throw new HttpsError("invalid-argument", "Missing or invalid trackName.");
   }
-  if (!artistName || typeof artistName !== "string") {
-    // Assuming artistName is required
+  if (!trackData.artist || typeof trackData.artist !== "string") {
     throw new HttpsError("invalid-argument", "Missing or invalid artistName.");
   }
 
@@ -218,14 +219,15 @@ export const addTrackToQueue = onCall(async (req) => {
     const newTrackRef = db.ref(`sessions/${sessionId}/queue`).push();
 
     await newTrackRef.set({
-      trackUri: trackUri,
-      trackName: trackName,
-      artistName: artistName,
-      albumCoverUrl: albumCoverUrl || null,
+      uri: trackData.uri,
+      name: trackData.name,
+      artist: trackData.artist,
+      albumCoverUrl: trackData.albumCoverUrl || null,
       suggesterUsername: req.auth.token.name,
       votes: {},
       voteCount: 0,
-      addedAt: admin.database.ServerValue.TIMESTAMP,
+      // addedAt: admin.database.ServerValue.TIMESTAMP,
+      addedAt: Date.now(),
     });
 
     return { success: true, queueItemId: newTrackRef.key };
