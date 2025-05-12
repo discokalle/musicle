@@ -164,7 +164,8 @@ export const searchSpotifyTracks = onCall(async (req) => {
       return {
         uri: item.uri,
         name: item.name,
-        artist: item.artists[0],
+        artist: item.artists[0].name,
+        album: item.album?.name,
         albumCoverUrl: item.album?.images?.[0]?.url,
       } as TrackData;
     });
@@ -192,7 +193,7 @@ export const addTrackToQueue = onCall(async (req) => {
   const sessionId: string = req.data.sessionId;
   const trackData: TrackData = req.data.trackData;
 
-  console.log(sessionId, trackData);
+  // console.log(sessionId, trackData);
 
   if (!sessionId || typeof sessionId !== "string") {
     throw new HttpsError("invalid-argument", "Missing or invalid sessionId.");
@@ -222,10 +223,7 @@ export const addTrackToQueue = onCall(async (req) => {
     const newTrackRef = db.ref(`sessions/${sessionId}/queue`).push();
 
     await newTrackRef.set({
-      uri: trackData.uri,
-      name: trackData.name,
-      artist: trackData.artist,
-      albumCoverUrl: trackData.albumCoverUrl || null,
+      track: trackData,
       suggesterUsername: req.auth.token.name,
       votes: {},
       voteCount: 0,
@@ -278,6 +276,7 @@ export const voteForTrack = onCall(async (req) => {
       throw new HttpsError("not-found", "Track not found in the queue.");
     }
 
+    // checks if the user has already voted, and removes vote if it has
     const transactionResult = await trackRef
       .child(`votes/${voterUid}`)
       .transaction((currentVote) => {

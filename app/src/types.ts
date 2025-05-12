@@ -10,5 +10,6 @@ export type TrackData = {
   uri: string;
   name: string;
   artist: string;
+  album: string;
   albumCoverUrl: string;
 };

@@ -40,7 +40,7 @@ function SearchBarApi({
 
     const fetchRecs = async (prefix: string) => {
       try {
-        console.log(prefix);
+        // console.log(prefix);
         const res = await apiCall(prefix);
 
         if (isCancelled) return;

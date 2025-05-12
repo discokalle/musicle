@@ -9,6 +9,8 @@ import SearchBarApi from "../components/SearchBarApi";
 import { SessionData, TrackData } from "../types";
 
 import { auth, db, functions } from "../firebase";
+import List from "../components/List";
+import QueueListItem from "../components/QueueListItem";
 
 const searchSpotifyTracks = httpsCallable<
   { sessionId: string; query: string },
@@ -56,6 +58,8 @@ function QueueSession() {
           const data = snapshot.val() as SessionData;
           setSessionData(data);
           setError("");
+
+          // console.log(sessionData);
 
           setIsHost(data.hostUserId === auth.currentUser?.uid);
 
@@ -111,10 +115,10 @@ function QueueSession() {
         );
         await update(ref(db, `sessions/${sessionId}`), { isEnded: true });
 
-        // delete session from DB w/ 5 second delay
+        // delete session from DB w/ 2 second delay
         setTimeout(() => {
           set(ref(db, `sessions/${sessionId}`), null);
-        }, 5000);
+        }, 2000);
       } catch (e: any) {
         alert(`Error while ending session ${e.message}`);
       }
@@ -128,6 +132,7 @@ function QueueSession() {
 
   const searchBarMatchLogic = async (recTrackData: TrackData) => {
     try {
+      // console.log(recTrackData);
       await addTrackToQueue({ sessionId, trackData: recTrackData });
     } catch (e: any) {
       console.log(`An error occurred during the match logic: ${e.message}`);
@@ -135,7 +140,7 @@ function QueueSession() {
   };
 
   const searchBarRenderRec = (rec: any) => {
-    return <div>{rec.name + " – " + rec.artist.name}</div>;
+    return <div>{rec.name + " – " + rec.artist}</div>;
   };
 
   const handleCopySessionId = async () => {
@@ -174,6 +179,28 @@ function QueueSession() {
         renderRec={searchBarRenderRec}
         inputPlaceholderText="Search for a track..."
       ></SearchBarApi>
+      <List className="text-neutral">
+        {sessionData?.queue && Object.keys(sessionData.queue).length > 0 ? (
+          Object.entries(sessionData.queue)
+            // sort queue in descending order based on vote count
+            .sort(([, a], [, b]) => b.voteCount - a.voteCount)
+            .map(([itemId, item]) => (
+              <QueueListItem
+                key={itemId}
+                id={itemId}
+                sessionId={sessionId}
+                track={item.track}
+                votes={
+                  item.votes ? new Set(Object.values(item.votes)) : new Set()
+                }
+                voteCount={item.voteCount}
+                suggesterUsername={item.suggesterUsername}
+              ></QueueListItem>
+            ))
+        ) : (
+          <div>No tracks in the queue.</div>
+        )}
+      </List>
       {isHost ? <Button onClick={handleEndSession}>End Session</Button> : null}
     </div>
   );

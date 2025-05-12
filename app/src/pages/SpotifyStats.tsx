@@ -1,5 +1,7 @@
 import List from "../components/List";
-import StreamListItem from "../components/StreamListItem";
+import TrackListItem from "../components/TrackListItem";
+
+import { TrackData } from "../types";
 
 import { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
@@ -13,9 +15,7 @@ const callSpotifyApi = httpsCallable(functions, "callSpotifyApi");
 type ProfileContext = { userSnapshot: DataSnapshot };
 
 function SpotifyStats() {
-  const [topTracks, setTopTracks] = useState<
-    { songName: string; artistName: string; albumName: string }[]
-  >([]);
+  const [topTracks, setTopTracks] = useState<TrackData[]>();
   const [isLoading, setIsLoading] = useState(false);
 
   const { userSnapshot } = useOutletContext<ProfileContext>();
@@ -42,10 +42,12 @@ function SpotifyStats() {
       const data = res?.data as { items: any[] };
       for (const item of data.items) {
         topTracksList.push({
-          songName: item.name,
-          artistName: item.artists[0].name,
-          albumName: item.album.name,
-        });
+          uri: item.uri,
+          name: item.name,
+          artist: item.artists[0].name,
+          album: item.album?.name,
+          albumCoverUrl: item.album?.images?.[0]?.url,
+        } as TrackData);
       }
       setTopTracks(topTracksList);
       setIsLoading(false);
@@ -62,9 +64,10 @@ function SpotifyStats() {
     <div className="flex flex-col gap-3">
       <h1 className="text-neutral text-2xl font-bold">Top Tracks</h1>
       <List>
-        {topTracks.map((item, index) => (
-          <StreamListItem key={index} {...item}></StreamListItem>
-        ))}
+        {topTracks &&
+          topTracks.map((item, index) => (
+            <TrackListItem key={index} {...item}></TrackListItem>
+          ))}
       </List>
     </div>
   );
