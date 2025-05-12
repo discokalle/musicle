@@ -4,15 +4,15 @@
 
 ### Functional
 
-- A hub for music enthusiasts at any level
-  - Statistics about your listening habits
-  - Record your instrument learning progress
-    - Get recommendations for songs to learn depending on
-      which chords/songs you can play already
-  - Add friends and compare your statistics and progress
-  - Social in-person features such as music quizzes (that take each person's
-    music taste into account) and a live queue for music-listening sessions
-  - And hopefully plenty more features as we develop the app!
+(Preliminary:)
+
+- A social music app
+- Users can connect their Spotify accounts to get a tailored experience
+  - Their profile will contain a summary of different statistics about their listening habits
+- Intended for use in in-person get-togethers
+  - Music quizzes that take each person's music taste into account (by looking at their Spotify data)
+  - A live queue for music-listening sessions with a rank-voting mechanism
+    - The song in queue with the most votes will be played next on the connected Spotify device
 
 ### Technological
 
