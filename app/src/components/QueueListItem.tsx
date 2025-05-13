@@ -1,6 +1,6 @@
 import RoundButton from "./RoundButton";
 
-import { TrackData } from "../types";
+import { QueueItemData } from "../types";
 
 import { httpsCallable } from "firebase/functions";
 
@@ -13,22 +13,15 @@ const voteForTrack = httpsCallable<
 >(functions, "voteForTrack");
 
 type Props = {
-  id: string;
   sessionId: string;
-  track: TrackData;
-  votes: Set<string>;
-  voteCount: number;
-  suggesterUsername: string;
+  id: string;
+  data: QueueItemData;
 };
 
-function QueueListItem({
-  id,
-  sessionId,
-  track,
-  votes,
-  voteCount,
-  suggesterUsername,
-}: Props) {
+function QueueListItem({ sessionId, id, data }: Props) {
+  // console.log(data);
+  const { suggesterUsername, track, voteCount, votes } = data;
+
   const handleVote = async () => {
     try {
       await voteForTrack({ sessionId, queueItemId: id });
@@ -57,7 +50,7 @@ function QueueListItem({
         className="aspect-square w-14 object-cover rounded-md"
       ></img>
       <RoundButton size="small" onClick={handleVote}>
-        {votes && auth.currentUser?.uid && votes.has(auth.currentUser?.uid)
+        {votes && auth.currentUser?.uid && votes[auth.currentUser.uid]
           ? "❌"
           : "❤️"}
       </RoundButton>

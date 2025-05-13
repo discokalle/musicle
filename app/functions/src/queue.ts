@@ -6,7 +6,10 @@ import {
 } from "firebase-functions/v2/https";
 import { _callSpotifyApi } from "./spotify";
 
+import { QueueItemData } from "../../src/types";
+
 import { TrackData } from "../../src/types";
+import { SessionData } from "react-router";
 
 // import {
 //   spotifyClientIdVar,
@@ -16,7 +19,7 @@ import { TrackData } from "../../src/types";
 
 const db = admin.database();
 
-export const createSession = onCall(async (req) => {
+export const createSession = onCall(async (req: CallableRequest) => {
   if (!req.auth) {
     throw new HttpsError(
       "unauthenticated",
@@ -49,13 +52,13 @@ export const createSession = onCall(async (req) => {
 
     await sessionRef.set({
       hostUserId: hostUserId,
-      // createdAt: admin.database.ServerValue.TIMESTAMP,
-      createdAt: Date.now(),
       participants: {
         [hostUserId]: true,
       },
       queue: {},
-    });
+      // createdAt: admin.database.ServerValue.TIMESTAMP,
+      createdAt: Date.now(),
+    } as SessionData);
 
     console.log(`Session created: ${sessionId} by host: ${hostUserId}`);
 
@@ -65,7 +68,7 @@ export const createSession = onCall(async (req) => {
   }
 });
 
-export const joinSession = onCall(async (req) => {
+export const joinSession = onCall(async (req: CallableRequest) => {
   if (!req.auth) {
     throw new HttpsError(
       "unauthenticated",
@@ -97,7 +100,7 @@ export const joinSession = onCall(async (req) => {
   }
 });
 
-export const searchSpotifyTracks = onCall(async (req) => {
+export const searchSpotifyTracks = onCall(async (req: CallableRequest) => {
   if (!req.auth) {
     throw new HttpsError(
       "unauthenticated",
@@ -184,7 +187,7 @@ export const searchSpotifyTracks = onCall(async (req) => {
   }
 });
 
-export const addTrackToQueue = onCall(async (req) => {
+export const addTrackToQueue = onCall(async (req: CallableRequest) => {
   if (!req.auth) {
     throw new HttpsError("unauthenticated", "Authentication required.");
   }
@@ -229,7 +232,7 @@ export const addTrackToQueue = onCall(async (req) => {
       voteCount: 0,
       // addedAt: admin.database.ServerValue.TIMESTAMP,
       addedAt: Date.now(),
-    });
+    } as QueueItemData);
 
     return { success: true, queueItemId: newTrackRef.key };
   } catch (e: any) {
@@ -244,7 +247,7 @@ export const addTrackToQueue = onCall(async (req) => {
   }
 });
 
-export const voteForTrack = onCall(async (req) => {
+export const voteForTrack = onCall(async (req: CallableRequest) => {
   if (!req.auth) {
     throw new HttpsError("unauthenticated", "Authentication required.");
   }
@@ -306,4 +309,88 @@ export const voteForTrack = onCall(async (req) => {
   }
 });
 
-// TO-DO: implement playNextTrack() and getHostDeviceId() (to know which device is playing)
+// // TO-DO: implement playNextTrack() and getHostDeviceId() (to know which device is playing)
+export const playNextTrack = onCall(async (req: CallableRequest) => {
+  if (!req.auth) {
+    throw new HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  const hostUserId = req.auth.uid;
+  const { sessionId, deviceId } = req.data;
+
+  if (!sessionId || typeof sessionId !== "string") {
+    throw new HttpsError("invalid-argument", "Missing or invalid sessiondId");
+  }
+  if (!deviceId || typeof deviceId !== "string") {
+    throw new HttpsError("invalid-argument", "Missing or invalid deviceId");
+  }
+
+  try {
+    const sessionRef = db.ref(`sessions/${sessionId}`);
+    const sessionSnapshot = await sessionRef.once("value");
+    if (!sessionSnapshot.exists()) {
+      throw new HttpsError("not-found", "Session not found.");
+    }
+
+    const sessionData = sessionSnapshot.val();
+    if (sessionData.hostUserId !== hostUserId) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only the host can control playback."
+      );
+    }
+
+    if (sessionData.isEnded) {
+      throw new HttpsError(
+        "failed-precondition",
+        "The session has already ended."
+      );
+    }
+
+    const queueSnapshot = await sessionRef.child("queue").once("value");
+    const queue: Record<string, QueueItemData> = queueSnapshot.val();
+
+    if (!queue || Object.keys(queue).length === 0) {
+      return { success: true, message: "Queue is empty." };
+    }
+
+    const [nextTrackId, nextTrack] = Object.entries(queue).sort(
+      ([, a], [, b]) => b.voteCount - a.voteCount
+    )[0];
+
+    if (!nextTrack || !nextTrack.track || !nextTrack.track.uri) {
+      console.error("Next track or track URI is invalid.", nextTrack);
+      throw new HttpsError(
+        "internal",
+        "Could not determine a valid next track from the queue."
+      );
+    }
+
+    await _callSpotifyApi({
+      data: {
+        endpoint: "/v1/me/player/play",
+        method: "PUT",
+        body: { uris: [nextTrack.track.uri] },
+        targetUserId: hostUserId,
+        queryParams: { deviceId: deviceId },
+      },
+    } as CallableRequest);
+
+    await sessionRef.child(`queue/${nextTrackId}`).remove();
+
+    return {
+      success: true,
+      message: `Playing next track: ${nextTrack.track.name}`,
+      playedTrackUri: nextTrack.track.uri,
+    };
+  } catch (e: any) {
+    if (e instanceof HttpsError) {
+      throw e;
+    }
+    throw new HttpsError(
+      "internal",
+      "Failed to play the next track.",
+      e.message
+    );
+  }
+});

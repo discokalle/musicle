@@ -187,14 +187,9 @@ function QueueSession() {
             .map(([itemId, item]) => (
               <QueueListItem
                 key={itemId}
-                id={itemId}
                 sessionId={sessionId}
-                track={item.track}
-                votes={
-                  item.votes ? new Set(Object.keys(item.votes)) : new Set()
-                }
-                voteCount={item.voteCount}
-                suggesterUsername={item.suggesterUsername}
+                id={itemId}
+                data={item}
               ></QueueListItem>
             ))
         ) : (
