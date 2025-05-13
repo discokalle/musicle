@@ -191,7 +191,7 @@ function QueueSession() {
                 sessionId={sessionId}
                 track={item.track}
                 votes={
-                  item.votes ? new Set(Object.values(item.votes)) : new Set()
+                  item.votes ? new Set(Object.keys(item.votes)) : new Set()
                 }
                 voteCount={item.voteCount}
                 suggesterUsername={item.suggesterUsername}
