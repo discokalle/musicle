@@ -22,3 +22,4 @@ export const joinSession = queue.joinSession;
 export const searchSpotifyTracks = queue.searchSpotifyTracks;
 export const addTrackToQueue = queue.addTrackToQueue;
 export const voteForTrack = queue.voteForTrack;
+export const playNextTrack = queue.playNextTrack;

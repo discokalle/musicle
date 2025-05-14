@@ -49,7 +49,13 @@ export const getActiveSpotifyDevices = onCall(async (req: CallableRequest) => {
 });
 
 export const setSpotifyDevice = onCall(
-  async (req: CallableRequest<{ sessionId: string; deviceId: string }>) => {
+  async (
+    req: CallableRequest<{
+      sessionId: string;
+      deviceId: string;
+      deviceName: string;
+    }>
+  ) => {
     if (!req.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -58,13 +64,19 @@ export const setSpotifyDevice = onCall(
     }
 
     const hostUserId = req.auth.uid;
-    const { sessionId, deviceId } = req.data;
+    const { sessionId, deviceId, deviceName } = req.data;
 
     if (!sessionId || typeof sessionId !== "string") {
       throw new HttpsError("invalid-argument", "Missing or invalid sessionId.");
     }
     if (!deviceId || typeof deviceId !== "string") {
       throw new HttpsError("invalid-argument", "Missing or invalid deviceId.");
+    }
+    if (!deviceName || typeof deviceName !== "string") {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing or invalid deviceName."
+      );
     }
 
     try {
@@ -83,7 +95,8 @@ export const setSpotifyDevice = onCall(
         );
       }
 
-      await sessionRef.update({ spotifyDeviceId: deviceId });
+      await sessionRef.update({ deviceId: deviceId });
+      await sessionRef.update({ deviceName: deviceName });
       return { success: true, message: "Spotify device set successfully." };
     } catch (e: any) {
       if (e instanceof HttpsError) throw e;
@@ -438,7 +451,7 @@ export const voteForTrack = onCall(
 );
 
 export const playNextTrack = onCall(
-  async (req: CallableRequest<{ sessionId: string; deviceId: string }>) => {
+  async (req: CallableRequest<{ sessionId: string }>) => {
     if (!req.auth) {
       throw new HttpsError(
         "unauthenticated",
@@ -447,13 +460,10 @@ export const playNextTrack = onCall(
     }
 
     const hostUserId = req.auth.uid;
-    const { sessionId, deviceId } = req.data;
+    const { sessionId } = req.data;
 
     if (!sessionId || typeof sessionId !== "string") {
       throw new HttpsError("invalid-argument", "Missing or invalid sessiondId");
-    }
-    if (!deviceId || typeof deviceId !== "string") {
-      throw new HttpsError("invalid-argument", "Missing or invalid deviceId");
     }
 
     try {
@@ -478,6 +488,13 @@ export const playNextTrack = onCall(
         );
       }
 
+      if (!sessionData.deviceId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has not connected to a Spotify device."
+        );
+      }
+
       const queueSnapshot = await sessionRef.child("queue").once("value");
       const queue: Record<string, QueueItemData> = queueSnapshot.val();
 
@@ -497,13 +514,32 @@ export const playNextTrack = onCall(
         );
       }
 
+      console.log(
+        "Spotify API Request from playNextTrack:",
+        nextTrack.track.uri,
+        hostUserId,
+        sessionData.deviceId
+      );
+
+      // await _callSpotifyApi({
+      //   data: {
+      //     endpoint: "/v1/me/player/play",
+      //     method: "PUT",
+      //     body: { uris: [nextTrack.track.uri] },
+      //     targetUserId: hostUserId,
+      //     queryParams: { device_id: sessionData.deviceId },
+      //   },
+      // } as CallableRequest);
+
       await _callSpotifyApi({
         data: {
-          endpoint: "/v1/me/player/play",
-          method: "PUT",
-          body: { uris: [nextTrack.track.uri] },
+          endpoint: "/v1/me/player/queue",
+          method: "POST",
+          queryParams: {
+            uri: nextTrack.track.uri,
+            device_id: sessionData.deviceId,
+          },
           targetUserId: hostUserId,
-          queryParams: { deviceId: deviceId },
         },
       } as CallableRequest);
 
@@ -512,7 +548,7 @@ export const playNextTrack = onCall(
       return {
         success: true,
         message: `Playing next track: ${nextTrack.track.name}`,
-        playedTrackUri: nextTrack.track.uri,
+        playedTrackData: nextTrack.track,
       };
     } catch (e: any) {
       if (e instanceof HttpsError) {

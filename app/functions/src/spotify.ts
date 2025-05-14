@@ -256,6 +256,8 @@ export async function _callSpotifyApi(req: CallableRequest): Promise<any> {
       throw e;
     }
 
+    console.log(e.response.data, e.message, e.code);
+
     throw new HttpsError("internal", "Failed to call Spotify API", e.message);
   }
 }

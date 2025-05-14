@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router";
-import { act, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { off, onValue, ref, set, update } from "firebase/database";
 import { httpsCallable } from "firebase/functions";
 
@@ -18,7 +18,7 @@ const getActiveSpotifyDevices = httpsCallable<undefined, { devices: any[] }>(
 );
 
 const setSpotifyDevice = httpsCallable<
-  { sessionId: string; deviceId: string },
+  { sessionId: string; deviceId: string; deviceName: string },
   { success: boolean; message: string }
 >(functions, "setSpotifyDevice");
 
@@ -39,6 +39,15 @@ const addTrackToQueue = httpsCallable<
   },
   { success: boolean; queueItemId: string }
 >(functions, "addTrackToQueue");
+
+const playNextTrack = httpsCallable<
+  { sessionId: string },
+  {
+    success: boolean;
+    message: string;
+    playedTrackData: TrackData;
+  }
+>(functions, "playNextTrack");
 
 function QueueSession() {
   const navigate = useNavigate();
@@ -73,6 +82,66 @@ function QueueSession() {
     };
   }, [isHost, sessionData?.deviceId]);
 
+  // listens to when Spotify playback state changes, and plays the next track
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    let prevState: any = null;
+
+    const monitorPlaybackState = async () => {
+      if (typeof sessionId !== "string") {
+        return;
+      }
+      if (typeof sessionData?.deviceId !== "string") {
+        return;
+      }
+
+      try {
+        const resPlayback = await getSpotifyPlaybackState();
+        const currState = resPlayback.data.playbackState;
+        // TO-DO: change this logic
+        // (waiting for a song to end and see if currState is not playing will not work
+        // because Spotify always auto-queues a new song even if the queue is empty)
+        if (
+          prevState?.is_playing &&
+          !currState.is_playing &&
+          prevState.progress_ms >= prevState.item.duration_ms - 5000 // buffer
+        ) {
+          const resTrack = await playNextTrack({
+            sessionId: sessionId,
+          });
+
+          if (resTrack && resTrack.data.playedTrackData) {
+            updateCurrentTrack(resTrack.data.playedTrackData);
+          }
+        }
+
+        if (currState && prevState) {
+          console.log(
+            prevState.is_playing,
+            currState.is_playing,
+            prevState.progress_ms,
+            prevState.item.duration_ms
+          );
+        }
+
+        prevState = currState;
+      } catch (e: any) {
+        console.log(e.message);
+      }
+    };
+
+    if (isHost && sessionData?.deviceId) {
+      monitorPlaybackState();
+
+      interval = setInterval(monitorPlaybackState, 2500);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isHost, sessionData?.deviceId, sessionId]);
+
+  // listens for changes to the RTDB and updates the sessionData state
   useEffect(() => {
     if (!sessionId) {
       setError("Session ID is missing.");
@@ -199,10 +268,27 @@ function QueueSession() {
     setIsLoading(true);
 
     try {
-      await set(ref(db, `sessions/${sessionId}/deviceId`), id);
-      await set(ref(db, `sessions/${sessionId}/deviceName`), name);
+      await setSpotifyDevice({
+        sessionId: sessionId,
+        deviceId: id,
+        deviceName: name,
+      });
     } catch (e: any) {
       console.log(e.message);
+    }
+
+    setIsLoading(false);
+  };
+
+  const updateCurrentTrack = async (track: TrackData) => {
+    try {
+      if (sessionId) {
+        await update(ref(db, `sessions/${sessionId}`), {
+          currentTrack: track,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update current track:", error);
     }
   };
 
@@ -247,6 +333,12 @@ function QueueSession() {
       <p className="text-2xl text-neutral text-center">
         Playing on "{sessionData.deviceName}"
       </p>
+      {sessionData?.currentTrack && (
+        <p className="text-xl text-neutral text-center">
+          Currently playing "{sessionData.currentTrack.name}" by "
+          {sessionData.currentTrack.artist}"
+        </p>
+      )}
       <SearchBarApi
         apiCall={searchBarApiCall}
         matchLogic={searchBarMatchLogic}
@@ -270,7 +362,7 @@ function QueueSession() {
           <div>No tracks in the queue.</div>
         )}
       </List>
-      {isHost ? <Button onClick={handleEndSession}>End Session</Button> : null}
+      {isHost && <Button onClick={handleEndSession}>End Session</Button>}
     </div>
   );
 }

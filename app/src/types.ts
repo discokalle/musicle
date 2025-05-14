@@ -6,6 +6,7 @@ export type SessionData = {
   createdAt: number;
   deviceId?: string;
   deviceName?: string;
+  currentTrack?: TrackData;
   isEnded?: boolean;
 };
 

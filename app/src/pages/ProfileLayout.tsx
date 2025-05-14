@@ -76,6 +76,13 @@ function ProfileLayout() {
     const isConfirmed = window.confirm("Disconnect Spotify?");
     if (isConfirmed && userSnapshot?.key) {
       await set(ref(db, `users/${userSnapshot.key}/spotify`), null);
+
+      try {
+        const updatedSnapshot = await get(ref(db, `users/${userSnapshot.key}`));
+        setUserSnapshot(updatedSnapshot);
+      } catch (error) {
+        console.log("Failed to re-fetch user data:", error);
+      }
     }
   };
 
