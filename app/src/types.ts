@@ -4,6 +4,8 @@ export type SessionData = {
   participants: Record<string, boolean>;
   queue: Record<string, any>;
   createdAt: number;
+  deviceId?: string;
+  deviceName?: string;
   isEnded?: boolean;
 };
 

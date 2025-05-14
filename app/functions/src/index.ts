@@ -14,6 +14,9 @@ import * as queue from "./queue";
 export const callSpotifyApi = spotify.callSpotifyApi;
 export const exchangeSpotifyCode = spotify.exchangeSpotifyCode;
 
+export const getActiveSpotifyDevices = queue.getActiveSpotifyDevices;
+export const setSpotifyDevice = queue.setSpotifyDevice;
+export const getSpotifyPlaybackState = queue.getSpotifyPlaybackState;
 export const createSession = queue.createSession;
 export const joinSession = queue.joinSession;
 export const searchSpotifyTracks = queue.searchSpotifyTracks;

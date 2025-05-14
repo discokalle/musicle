@@ -14,83 +14,85 @@ import {
 
 const db = admin.database();
 
-export const exchangeSpotifyCode = onCall(async (req) => {
-  if (!req.auth) {
-    throw new HttpsError(
-      "unauthenticated",
-      "The function must be called while authenticated."
-    );
-  }
-
-  const code = req.data.code;
-  if (!code || typeof code !== "string") {
-    throw new HttpsError(
-      "invalid-argument",
-      "The function must be called with a valid 'code' argument."
-    );
-  }
-
-  const userId = req.auth.uid;
-
-  const spotifyClientId = spotifyClientIdVar.value();
-  const spotifyRedirectUri = spotifyRedirectUriVar.value();
-  const spotifyClientSecret = spotifyClientSecretVar.value();
-
-  if (!spotifyClientId || !spotifyClientSecret || !spotifyRedirectUri) {
-    console.error(
-      "Spotify configuration missing in Firebase environment variables."
-    );
-    throw new HttpsError("internal", "Server configuration error.");
-  }
-
-  try {
-    const tokenUrl = "https://accounts.spotify.com/api/token";
-
-    // encode Client ID and Secret for Basic Auth header
-    const authHeader = Buffer.from(
-      `${spotifyClientId}:${spotifyClientSecret}`
-    ).toString("base64");
-
-    const params = new URLSearchParams();
-    params.append("grant_type", "authorization_code");
-    params.append("code", code);
-    params.append("redirect_uri", spotifyRedirectUri);
-
-    const response = await axios.post(tokenUrl, params, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${authHeader}`,
-      },
-    });
-
-    const { access_token, refresh_token, expires_in } = response.data;
-
-    if (!access_token || !refresh_token) {
-      throw new Error("Failed to retrieve tokens from Spotify.");
+export const exchangeSpotifyCode = onCall(
+  async (req: CallableRequest<{ code: string }>) => {
+    if (!req.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "The function must be called while authenticated."
+      );
     }
 
-    // store the users Spotify token data
-    await db.ref(`users/${userId}/spotify`).set({
-      accessToken: access_token,
-      refreshToken: refresh_token,
-      expiresAt: Date.now() + expires_in * 1000,
-    });
+    const code = req.data.code;
+    if (!code || typeof code !== "string") {
+      throw new HttpsError(
+        "invalid-argument",
+        "The function must be called with a valid 'code' argument."
+      );
+    }
 
-    return { success: true, message: "Spotify connected successfully." };
-    // eslint-disable-next-line
-  } catch (e: any) {
-    console.error(
-      "Error exchanging Spotify code for user:",
-      userId,
-      e.response?.data || e.message || e
-    );
-    throw new HttpsError(
-      "internal",
-      "Failed to connect Spotify account. Please try again later.",
-      e.message
-    );
+    const userId = req.auth.uid;
+
+    const spotifyClientId = spotifyClientIdVar.value();
+    const spotifyRedirectUri = spotifyRedirectUriVar.value();
+    const spotifyClientSecret = spotifyClientSecretVar.value();
+
+    if (!spotifyClientId || !spotifyClientSecret || !spotifyRedirectUri) {
+      console.error(
+        "Spotify configuration missing in Firebase environment variables."
+      );
+      throw new HttpsError("internal", "Server configuration error.");
+    }
+
+    try {
+      const tokenUrl = "https://accounts.spotify.com/api/token";
+
+      // encode Client ID and Secret for Basic Auth header
+      const authHeader = Buffer.from(
+        `${spotifyClientId}:${spotifyClientSecret}`
+      ).toString("base64");
+
+      const params = new URLSearchParams();
+      params.append("grant_type", "authorization_code");
+      params.append("code", code);
+      params.append("redirect_uri", spotifyRedirectUri);
+
+      const response = await axios.post(tokenUrl, params, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Authorization: `Basic ${authHeader}`,
+        },
+      });
+
+      const { access_token, refresh_token, expires_in } = response.data;
+
+      if (!access_token || !refresh_token) {
+        throw new Error("Failed to retrieve tokens from Spotify.");
+      }
+
+      // store the users Spotify token data
+      await db.ref(`users/${userId}/spotify`).set({
+        accessToken: access_token,
+        refreshToken: refresh_token,
+        expiresAt: Date.now() + expires_in * 1000,
+      });
+
+      return { success: true, message: "Spotify connected successfully." };
+      // eslint-disable-next-line
+    } catch (e: any) {
+      console.error(
+        "Error exchanging Spotify code for user:",
+        userId,
+        e.response?.data || e.message || e
+      );
+      throw new HttpsError(
+        "internal",
+        "Failed to connect Spotify account. Please try again later.",
+        e.message
+      );
+    }
   }
-});
+);
 
 const refreshAccessToken = async (userId: string) => {
   const spotifyClientId = spotifyClientIdVar.value();
@@ -260,7 +262,7 @@ export async function _callSpotifyApi(req: CallableRequest): Promise<any> {
 
 export const callSpotifyApi = onCall(
   { secrets: [spotifyClientSecretVar] },
-  async (req) => {
+  async (req: CallableRequest) => {
     return await _callSpotifyApi(req);
   }
 );

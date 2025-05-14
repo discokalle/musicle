@@ -14,6 +14,8 @@
 
 - Add profile picture upload option for users
 
+- Add push notiflications using Firebase (e.g., for inviting people to queue sessions)
+
 - In the end:
   - Update RTDB rules
   - Polish the design parts and select a suitable theme

@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router";
-import { useEffect, useRef, useState } from "react";
+import { act, useEffect, useRef, useState } from "react";
 import { off, onValue, ref, set, update } from "firebase/database";
 import { httpsCallable } from "firebase/functions";
 
@@ -11,6 +11,21 @@ import { SessionData, TrackData } from "../types";
 import { auth, db, functions } from "../firebase";
 import List from "../components/List";
 import QueueListItem from "../components/QueueListItem";
+
+const getActiveSpotifyDevices = httpsCallable<undefined, { devices: any[] }>(
+  functions,
+  "getActiveSpotifyDevices"
+);
+
+const setSpotifyDevice = httpsCallable<
+  { sessionId: string; deviceId: string },
+  { success: boolean; message: string }
+>(functions, "setSpotifyDevice");
+
+const getSpotifyPlaybackState = httpsCallable<
+  undefined,
+  { playbackState: any }
+>(functions, "getSpotifyPlaybackState");
 
 const searchSpotifyTracks = httpsCallable<
   { sessionId: string; query: string },
@@ -30,9 +45,33 @@ function QueueSession() {
   const hasNavigatedRef = useRef(false);
   const { sessionId } = useParams<{ sessionId: string }>();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [activeSpotifyDevices, setActiveSpotifyDevices] = useState<any[]>([]);
   const [isHost, setIsHost] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    const fetchSpotifyDevices = async () => {
+      const res = await getActiveSpotifyDevices();
+
+      // console.log(Date.now(), res.data);
+
+      if (res.data.devices) {
+        setActiveSpotifyDevices(res.data.devices);
+      }
+    };
+
+    if (isHost && !sessionData?.deviceId) {
+      fetchSpotifyDevices();
+
+      interval = setInterval(fetchSpotifyDevices, 5000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isHost, sessionData?.deviceId]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -154,25 +193,60 @@ function QueueSession() {
     }
   };
 
+  const handleChosenDevice = async (id: string, name: string) => {
+    if (!isHost) return;
+
+    setIsLoading(true);
+
+    try {
+      await set(ref(db, `sessions/${sessionId}/deviceId`), id);
+      await set(ref(db, `sessions/${sessionId}/deviceName`), name);
+    } catch (e: any) {
+      console.log(e.message);
+    }
+  };
+
   const centerContainerCSS =
     "absolute flex flex-col gap-7 items-center left-1/2 top-[25%] transform -translate-x-1/2 bg-secondary \
-     p-10 rounded-md";
+     py-6 px-10 rounded-md";
 
-  const titleCSS = "text-5xl text-neutral text-center";
+  // console.log(activeSpotifyDevices);
+  if (!sessionData.deviceId) {
+    return (
+      <div className={centerContainerCSS}>
+        <h1 className="text-5xl text-neutral text-center">Choose a device</h1>
+        <List>
+          {activeSpotifyDevices.map((item, index) => (
+            <li
+              key={index}
+              className="panel-card cursor-pointer link-highlight"
+              onClick={() => {
+                handleChosenDevice(item.id, item.name);
+              }}
+            >
+              {item.name}
+            </li>
+          ))}
+        </List>
+      </div>
+    );
+  }
 
   return (
     <div className={centerContainerCSS}>
-      <div className={titleCSS}>
-        <h1>Queue Session ID</h1>
-        <h1
+      <h1 className="text-3xl text-neutral text-center">
+        Session ID:<br></br>
+        <span
           className="italic text-accent font-bold cursor-pointer link-highlight"
           onClick={handleCopySessionId}
           title="Copy session ID?"
         >
-          {sessionId || "??"}
-        </h1>
-      </div>
-      <p className="text-neutral text-xl"></p>
+          {sessionId}
+        </span>
+      </h1>
+      <p className="text-2xl text-neutral text-center">
+        Playing on "{sessionData.deviceName}"
+      </p>
       <SearchBarApi
         apiCall={searchBarApiCall}
         matchLogic={searchBarMatchLogic}
