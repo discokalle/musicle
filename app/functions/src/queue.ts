@@ -4,7 +4,7 @@ import {
   HttpsError,
   onCall,
 } from "firebase-functions/v2/https";
-import { _callSpotifyApi } from "./spotify";
+import { callSpotifyApi } from "./spotify";
 
 import { TrackData, SessionData, QueueItemData } from "../../src/types";
 
@@ -21,13 +21,11 @@ export const getActiveSpotifyDevices = onCall(async (req: CallableRequest) => {
   const userId = req.auth.uid;
 
   try {
-    const res = await _callSpotifyApi({
-      data: {
-        endpoint: "/v1/me/player/devices",
-        method: "GET",
-        targetUserId: userId,
-      },
-    } as CallableRequest);
+    const res = await callSpotifyApi({
+      endpoint: "/v1/me/player/devices",
+      method: "GET",
+      userId: userId,
+    });
 
     if (!res || !res.devices) {
       throw new HttpsError(
@@ -116,13 +114,11 @@ export const getSpotifyPlaybackState = onCall(async (req: CallableRequest) => {
   const userId = req.auth.uid;
 
   try {
-    const res = await _callSpotifyApi({
-      data: {
-        endpoint: "/v1/me/player",
-        method: "GET",
-        targetUserId: userId,
-      },
-    } as CallableRequest);
+    const res = await callSpotifyApi({
+      endpoint: "/v1/me/player",
+      method: "GET",
+      userId: userId,
+    });
 
     return { playbackState: res };
   } catch (e: any) {
@@ -268,18 +264,16 @@ export const searchSpotifyTracks = onCall(
         );
       }
 
-      const searchResults = await _callSpotifyApi({
-        data: {
-          endpoint: "/v1/search",
-          queryParams: {
-            q: query,
-            type: "track",
-            limit: 5 + 1,
-          },
-          method: "GET",
-          targetUserId: hostUserId,
+      const searchResults = await callSpotifyApi({
+        endpoint: "/v1/search",
+        method: "GET",
+        userId: hostUserId,
+        queryParams: {
+          q: query,
+          type: "track",
+          limit: 5 + 1,
         },
-      } as CallableRequest);
+      });
 
       if (!searchResults || !searchResults.tracks) {
         throw new HttpsError(
@@ -450,6 +444,7 @@ export const voteForTrack = onCall(
   }
 );
 
+// currently works by enqueueing a track as the previous one ends
 export const playNextTrack = onCall(
   async (req: CallableRequest<{ sessionId: string }>) => {
     if (!req.auth) {
@@ -514,34 +509,22 @@ export const playNextTrack = onCall(
         );
       }
 
-      console.log(
-        "Spotify API Request from playNextTrack:",
-        nextTrack.track.uri,
-        hostUserId,
-        sessionData.deviceId
-      );
+      // console.log(
+      //   "Spotify API Request from playNextTrack:",
+      //   nextTrack.track.uri,
+      //   hostUserId,
+      //   sessionData.deviceId
+      // );
 
-      // await _callSpotifyApi({
-      //   data: {
-      //     endpoint: "/v1/me/player/play",
-      //     method: "PUT",
-      //     body: { uris: [nextTrack.track.uri] },
-      //     targetUserId: hostUserId,
-      //     queryParams: { device_id: sessionData.deviceId },
-      //   },
-      // } as CallableRequest);
-
-      await _callSpotifyApi({
-        data: {
-          endpoint: "/v1/me/player/queue",
-          method: "POST",
-          queryParams: {
-            uri: nextTrack.track.uri,
-            device_id: sessionData.deviceId,
-          },
-          targetUserId: hostUserId,
+      await callSpotifyApi({
+        endpoint: "/v1/me/player/queue",
+        method: "POST",
+        userId: hostUserId,
+        queryParams: {
+          uri: nextTrack.track.uri,
+          device_id: sessionData.deviceId,
         },
-      } as CallableRequest);
+      });
 
       await sessionRef.child(`queue/${nextTrackId}`).remove();
 

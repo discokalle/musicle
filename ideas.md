@@ -17,6 +17,9 @@
 - Add push notiflications using Firebase (e.g., for inviting people to queue sessions)
 
 - In the end:
+  - Add a prompt that tells a user how their Spotify data will be used in the app
+    if they choose to connect (e.g., used for playback in queue session if they host,
+    or to display their Spotify stats on their profiles which other users also can see)
   - Update RTDB rules
   - Polish the design parts and select a suitable theme
   - Go through and remove console logs (at least those exposing private info)

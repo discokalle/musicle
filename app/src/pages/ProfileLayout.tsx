@@ -103,11 +103,6 @@ function ProfileLayout() {
       <div className="flex justify-between gap-8">
         <div className="panel-card flex items-center justify-between flex-grow">
           {subsecs.map(([secName, secLink]) => {
-            if (
-              userSnapshot.key != auth?.currentUser?.uid &&
-              secName == "Stats"
-            )
-              return null;
             return (
               <Link
                 key={secName}

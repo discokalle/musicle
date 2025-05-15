@@ -10,7 +10,10 @@ import { DataSnapshot } from "firebase/database";
 import { functions } from "../firebase";
 import { useOutletContext } from "react-router";
 
-const callSpotifyApi = httpsCallable(functions, "callSpotifyApi");
+const getTopTracks = httpsCallable<
+  { userId: string },
+  { topTracks: TrackData[] }
+>(functions, "getTopTracks");
 
 type ProfileContext = { userSnapshot: DataSnapshot };
 
@@ -27,29 +30,21 @@ function SpotifyStats() {
       }
 
       setIsLoading(true);
-      const res = await callSpotifyApi({
-        endpoint: "/v1/me/top/tracks",
-        method: "GET",
-        queryParams: {
-          limit: 5,
-          time_range: "short_term",
-        },
-      });
 
-      // console.log(res.data);
+      const userId = userSnapshot.key;
 
-      let topTracksList = [];
-      const data = res?.data as { items: any[] };
-      for (const item of data.items) {
-        topTracksList.push({
-          uri: item.uri,
-          name: item.name,
-          artist: item.artists[0].name,
-          album: item.album?.name,
-          albumCoverUrl: item.album?.images?.[0]?.url,
-        } as TrackData);
+      if (!userId) return;
+
+      try {
+        const res = await getTopTracks({ userId: userId });
+
+        if (!res?.data?.topTracks) return;
+
+        setTopTracks(res.data.topTracks);
+      } catch (e: any) {
+        console.log(e.message, e.response.data);
       }
-      setTopTracks(topTracksList);
+
       setIsLoading(false);
     };
 

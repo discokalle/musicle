@@ -85,7 +85,6 @@ function QueueSession() {
   // listens to when Spotify playback state changes, and plays the next track
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    let prevState: any = null;
 
     const monitorPlaybackState = async () => {
       if (typeof sessionId !== "string") {
@@ -98,13 +97,13 @@ function QueueSession() {
       try {
         const resPlayback = await getSpotifyPlaybackState();
         const currState = resPlayback.data.playbackState;
-        // TO-DO: change this logic
-        // (waiting for a song to end and see if currState is not playing will not work
-        // because Spotify always auto-queues a new song even if the queue is empty)
+        // this logic might need to be changed later (it works fine
+        // as long as the songs just play until the end, which will
+        // then queue; furthermore, it requires that the host does not
+        // enqueue things from Spotify itself)
         if (
-          prevState?.is_playing &&
-          !currState.is_playing &&
-          prevState.progress_ms >= prevState.item.duration_ms - 5000 // buffer
+          currState.progress_ms >=
+          currState.item.duration_ms - 5000 // buffer
         ) {
           const resTrack = await playNextTrack({
             sessionId: sessionId,
@@ -114,17 +113,6 @@ function QueueSession() {
             updateCurrentTrack(resTrack.data.playedTrackData);
           }
         }
-
-        if (currState && prevState) {
-          console.log(
-            prevState.is_playing,
-            currState.is_playing,
-            prevState.progress_ms,
-            prevState.item.duration_ms
-          );
-        }
-
-        prevState = currState;
       } catch (e: any) {
         console.log(e.message);
       }

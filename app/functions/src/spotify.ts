@@ -180,38 +180,37 @@ const refreshAccessToken = async (userId: string) => {
   }
 };
 
-// internal proxy function for spotify API calls (to allow other firebase
-// functions to use the API call logic)
-export async function _callSpotifyApi(req: CallableRequest): Promise<any> {
-  const {
-    endpoint,
-    method = "GET",
-    queryParams,
-    bodyData,
-    targetUserId,
-  } = req.data;
-
+export const callSpotifyApi = async ({
+  endpoint,
+  userId,
+  method = "GET",
+  queryParams,
+  bodyData,
+}: {
+  endpoint: string;
+  userId: string;
+  method: string;
+  queryParams?: any;
+  bodyData?: any;
+}) => {
   // in a joint session (e.g., queue) where the host has granted other
   // participants access to queue songs etc., a targetUserId may be
   // provided to the API call to allow these participants to make calls
   // on behalf of the host (under the assumption that the auth of the
   // non-host user has been done prior to calling this function)
 
-  // req.auth.uid will be null if targetUserId is provided (by design)
-  let userId: string;
-  if (targetUserId) {
-    userId = targetUserId;
-  } else if (req.auth?.uid) {
-    userId = req.auth?.uid;
-  } else {
-    throw new HttpsError("unauthenticated", "Authentication required.");
-  }
+  // this would probably require the host to explicitly accept these
+  // conditions, but for the sake of the app here, I figured that we
+  // can make the assumption that this has been done by the sample user
 
   if (!endpoint || typeof endpoint !== "string") {
     throw new HttpsError("invalid-argument", "Invalid 'endpoint' parameter");
   }
-  if (typeof method !== "string") {
+  if (!method || typeof method !== "string") {
     throw new HttpsError("invalid-argument", "Invalid 'method' parameter");
+  }
+  if (!userId || typeof userId !== "string") {
+    throw new HttpsError("invalid-argument", "Invalid 'userId' parameter");
   }
 
   try {
@@ -252,19 +251,16 @@ export async function _callSpotifyApi(req: CallableRequest): Promise<any> {
     return res.data;
     // eslint-disable-next-line
   } catch (e: any) {
+    // console.log("DEBUGDEBUGDEBUGDEBUG");
+    // console.log(e.response.data);
+    // console.log(e.message);
+    // console.log(e.code);
+    // console.log("DEBUGDEBUGDEBUGDEBUG");
+
     if (e instanceof HttpsError) {
       throw e;
     }
 
-    console.log(e.response.data, e.message, e.code);
-
     throw new HttpsError("internal", "Failed to call Spotify API", e.message);
   }
-}
-
-export const callSpotifyApi = onCall(
-  { secrets: [spotifyClientSecretVar] },
-  async (req: CallableRequest) => {
-    return await _callSpotifyApi(req);
-  }
-);
+};
