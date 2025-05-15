@@ -11,7 +11,7 @@ import { functions } from "../firebase";
 import { useOutletContext } from "react-router";
 
 const getTopTracks = httpsCallable<
-  { userId: string },
+  { userId: string; timeRange: string },
   { topTracks: TrackData[] }
 >(functions, "getTopTracks");
 
@@ -36,7 +36,10 @@ function SpotifyStats() {
       if (!userId) return;
 
       try {
-        const res = await getTopTracks({ userId: userId });
+        const res = await getTopTracks({
+          userId: userId,
+          timeRange: "medium_term",
+        });
 
         if (!res?.data?.topTracks) return;
 

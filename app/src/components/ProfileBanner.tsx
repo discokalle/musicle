@@ -5,7 +5,12 @@ import { useEffect, useState } from "react";
 
 import defaultProfilePic from "../assets/default-profile-pic.png";
 
-import { auth, db } from "../firebase";
+import { auth, db, storage } from "../firebase";
+import {
+  uploadBytes,
+  ref as storageRef,
+  getDownloadURL,
+} from "firebase/storage";
 
 type Props = {
   userSnapshot: DataSnapshot;
@@ -15,28 +20,15 @@ function ProfileBanner({ userSnapshot }: Props) {
   const loggedInUser = auth.currentUser;
   const targetUser = userSnapshot.val();
 
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [profilePic, setProfilePic] = useState<string>(
+    targetUser?.profilePicture || defaultProfilePic
+  );
 
-  useEffect(() => {
-    const checkFollowStatus = async () => {
-      try {
-        const loggedInUserId = loggedInUser?.uid;
-        const targetUserId = userSnapshot.key;
-
-        const followingRef = ref(
-          db,
-          `users/${loggedInUserId}/following/${targetUserId}`
-        );
-        const followingSnapshot = await get(followingRef);
-
-        setIsFollowing(followingSnapshot.exists());
-      } catch (e: any) {
-        console.error("Error:", e.message);
-      }
-    };
-
-    checkFollowStatus();
-  }, [loggedInUser, userSnapshot]);
+  const [isFollowing, setIsFollowing] = useState(
+    loggedInUser?.uid && targetUser.followers
+      ? targetUser.followers[loggedInUser.uid]
+      : false
+  );
 
   const handleBtnClick = async () => {
     try {
@@ -67,23 +59,61 @@ function ProfileBanner({ userSnapshot }: Props) {
     }
   };
 
+  const handleProfPicUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const userId = userSnapshot.key;
+      const fileRef = storageRef(storage, `profilePictures/${userId}`);
+      await uploadBytes(fileRef, file);
+
+      const downloadUrl = await getDownloadURL(fileRef);
+      await set(ref(db, `users/${userId}/profilePicture`), downloadUrl);
+
+      setProfilePic(downloadUrl);
+      alert("Profile picture uploaded successfully!");
+    } catch (e: any) {
+      alert(`Failed to upload profile picture: ${e.message}`);
+    }
+  };
+
   const usernameCSS = "text-3xl font-bold text-neutral";
   const subtitleCSS = "text-lg text-gray-300";
-  // const statusSymbolCSS =
-  //   "absolute top-0 right-0 w-5 h-5 bg-green-500 rounded-full border-2\
-  //    border-white transform translate-x-1/3 -translate-y-1/3 shadow-md/25";
+  const statusSymbolCSS = `${
+    targetUser.isOnline ? "bg-green-500" : "bg-red-500"
+  } absolute top-0 left-0 w-5 h-5 rounded-full border-2
+     border-white transform -translate-x-1/4 -translate-y-1/4 shadow-md/25`;
 
   return (
-    // profile picture, username and description will be loaded dynamically eventually...
     <div className="panel-card relative flex items-center gap-5">
-      <div className="relative">
+      <div className="w-30 h-30 relative">
         <img
-          src={targetUser.profilePicture || defaultProfilePic}
+          src={profilePic}
           alt="Profile"
-          className="w-30 h-30 rounded-md object-cover shadow-md/25"
+          className="w-full h-full rounded-md object-cover shadow-md/25"
         />
-        {/* Reintroduce the status symbol later if we implement it: */}
-        {/* <div className={statusSymbolCSS}></div> */}
+        {loggedInUser?.uid === userSnapshot.key && (
+          <div>
+            <RoundButton
+              onClick={() => document.getElementById("uploadInput")?.click()}
+              className="absolute top-1 right-1"
+              size="x_small"
+            >
+              ✏️
+            </RoundButton>
+            <input
+              id="uploadInput"
+              type="file"
+              accept="image/*"
+              onChange={handleProfPicUpload}
+              hidden
+            ></input>
+          </div>
+        )}
+        <div className={statusSymbolCSS}></div>
       </div>
       <div>
         <h1 className={usernameCSS}>{targetUser.username}</h1>

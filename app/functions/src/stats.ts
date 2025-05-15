@@ -11,20 +11,34 @@ import { TrackData } from "../../src/types";
 // const db = admin.database();
 
 export const getTopTracks = onCall(
-  async (req: CallableRequest<{ userId: string }>) => {
-    const { userId } = req.data;
+  async (req: CallableRequest<{ userId: string; timeRange: string }>) => {
+    const { userId, timeRange } = req.data;
 
     if (!userId || typeof userId !== "string") {
       throw new HttpsError("invalid-argument", "Invalid or missing userId.");
     }
+    if (!timeRange || typeof timeRange !== "string") {
+      throw new HttpsError("invalid-argument", "Invalid or missing timeRange.");
+    }
+
+    /**
+     * time_range:
+     * Over what time frame the affinities are computed.
+     * Valid values:
+     * long_term (calculated from ~1 year of data and
+     * including all new data as it becomes available),
+     * medium_term (approximately last 6 months),
+     * short_term (approximately last 4 weeks).
+     * Default: medium_term
+     */
 
     try {
       const res = await callSpotifyApi({
         endpoint: "/v1/me/top/tracks",
         method: "GET",
         queryParams: {
-          limit: 5,
-          time_range: "short_term",
+          limit: 20,
+          time_range: timeRange,
         },
         userId: userId,
       });

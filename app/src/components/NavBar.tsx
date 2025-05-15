@@ -3,7 +3,8 @@ import SearchBarDb from "./SearchBarDb";
 import { Link, useLocation, useNavigate } from "react-router";
 import { signOut } from "firebase/auth";
 
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
+import { ref, set } from "firebase/database";
 
 type Props = {
   logo: string;
@@ -17,7 +18,9 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
 
   const handleSignOut = async () => {
     try {
+      const userId = auth.currentUser?.uid;
       await signOut(auth);
+      await set(ref(db, `users/${userId}/isOnline`), null);
     } catch (e: any) {
       console.log("Signout failed.");
     }

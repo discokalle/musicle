@@ -15,14 +15,14 @@ import { db } from "../firebase";
 
 type Props = {
   dbCollectionName: string;
-  matchLogic: Function;
+  matchLogic: Function; // the logic to be used when we search for a query that matches the DB
   inputPlaceholderText: string;
   className?: string;
 };
 
 function SearchBarDb({
-  dbCollectionName, // which collection in the DB that you want to search in
-  matchLogic, // the logic to be used when we search for a query that matches the DB
+  dbCollectionName,
+  matchLogic,
   inputPlaceholderText,
   className,
 }: Props) {

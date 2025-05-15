@@ -3,12 +3,18 @@ import ProfileBanner from "../components/ProfileBanner";
 
 import spotifyLogo from "../assets/spotify-logo-cartoon.png";
 
-import { useParams, Link, useLocation, Outlet } from "react-router";
+import {
+  useParams,
+  Link,
+  useLocation,
+  Outlet,
+  useNavigate,
+} from "react-router";
 import { ref, get, set, DataSnapshot } from "firebase/database";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-import { auth, db } from "../firebase";
+import { auth, db, storage } from "../firebase";
 
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
@@ -17,6 +23,7 @@ const SPOTIFY_SCOPES =
   user-read-playback-state user-modify-playback-state user-read-currently-playing";
 
 function ProfileLayout() {
+  const navigate = useNavigate();
   const { username } = useParams();
   const location = useLocation();
   const [userSnapshot, setUserSnapshot] = useState<DataSnapshot>();
@@ -24,6 +31,10 @@ function ProfileLayout() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!auth.currentUser) {
+      navigate("/");
+    }
+
     const fetchUser = async () => {
       setIsLoading(true);
       setError("");
@@ -116,31 +127,26 @@ function ProfileLayout() {
             );
           })}
         </div>
-        {auth.currentUser?.uid == userSnapshot.key ? (
-          userSnapshot?.val().spotify === undefined ? (
-            <Button onClick={handleConnectSpotify}>
-              <span className="flex items-center gap-2">
-                Connect Spotify
-                <img
-                  src={spotifyLogo}
-                  alt="Spotify Logo"
-                  className="h-5 w-auto"
-                ></img>
-              </span>
-            </Button>
-          ) : (
-            <Button onClick={handleDisconnectSpotify}>
-              <span className="flex items-center gap-2">
-                Disconnect
-                <img
-                  src={spotifyLogo}
-                  alt="Spotify Logo"
-                  className="h-5 w-auto"
-                ></img>
-              </span>
-            </Button>
-          )
-        ) : null}
+        {auth.currentUser?.uid == userSnapshot.key && (
+          <Button
+            onClick={
+              userSnapshot?.val().spotify !== undefined
+                ? handleDisconnectSpotify
+                : handleConnectSpotify
+            }
+          >
+            <span className="flex items-center gap-2">
+              {userSnapshot?.val().spotify !== undefined
+                ? "Disconnect"
+                : "Connect Spotify"}
+              <img
+                src={spotifyLogo}
+                alt="Spotify Logo"
+                className="h-5 w-auto"
+              ></img>
+            </span>
+          </Button>
+        )}
       </div>
 
       <Outlet context={{ userSnapshot }}></Outlet>

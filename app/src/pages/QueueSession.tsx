@@ -59,12 +59,12 @@ function QueueSession() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // sets up a poll until the host has chosen an
+  // active Spotify device to connect to
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     const fetchSpotifyDevices = async () => {
       const res = await getActiveSpotifyDevices();
-
-      // console.log(Date.now(), res.data);
 
       if (res.data.devices) {
         setActiveSpotifyDevices(res.data.devices);
@@ -82,7 +82,8 @@ function QueueSession() {
     };
   }, [isHost, sessionData?.deviceId]);
 
-  // listens to when Spotify playback state changes, and plays the next track
+  // listens to when Spotify playback state changes,
+  // and plays the next track
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -129,7 +130,8 @@ function QueueSession() {
     };
   }, [isHost, sessionData?.deviceId, sessionId]);
 
-  // listens for changes to the RTDB and updates the sessionData state
+  // listens for changes to the session in RTDB and
+  // updates the sessionData state accordingly
   useEffect(() => {
     if (!sessionId) {
       setError("Session ID is missing.");
@@ -194,7 +196,6 @@ function QueueSession() {
     return <div>Error: {error}</div>;
   }
 
-  // console.log(sessionData, sessionId);
   if (!sessionData || !sessionId) {
     return <div>Session not found</div>;
   }
@@ -350,7 +351,11 @@ function QueueSession() {
           <div>No tracks in the queue.</div>
         )}
       </List>
-      {isHost && <Button onClick={handleEndSession}>End Session</Button>}
+      {isHost && (
+        <Button onClick={handleEndSession} className="absolute right-3 top-3">
+          End Session
+        </Button>
+      )}
     </div>
   );
 }

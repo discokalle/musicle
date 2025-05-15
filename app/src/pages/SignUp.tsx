@@ -40,6 +40,7 @@ function SignUp() {
       await set(ref(db, `users/${userId}`), {
         email,
         username,
+        isOnline: true,
       });
       await updateProfile(userCred.user, { displayName: username });
 
