@@ -23,6 +23,9 @@ import SpotifyStats from "./pages/SpotifyStats";
 import SpotifyCallback from "./pages/SpotifyCallback";
 import Queue from "./pages/Queue";
 import QueueSession from "./pages/QueueSession";
+import QuizLayout from "./pages/QuizLayout";
+import QuizSingle from "./pages/QuizSingle";
+import QuizMulti from "./pages/QuizMulti";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -34,10 +37,10 @@ function App() {
     ["Sign Up", "sign-up"],
     ["Login", "login"],
     ["Home", "home"],
+    ["Quiz", "quiz"],
     ["Queue", "queue"],
     ["Profile", "profile"],
     ["Sign Out", "/"],
-    ["Quiz", "quiz"],
   ];
 
   useEffect(() => {
@@ -75,6 +78,10 @@ function App() {
         <Route path="/spotify-callback" element={<SpotifyCallback />} />
         <Route path="/queue" element={<Queue />}></Route>
         <Route path="/queue/:sessionId" element={<QueueSession />}></Route>
+        <Route path="/quiz" element={<QuizLayout />}>
+          <Route path="single" element={<QuizSingle />} />
+          <Route path="multi" element={<QuizMulti />} />
+        </Route>
       </Routes>
     </Router>
   );

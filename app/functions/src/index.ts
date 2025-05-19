@@ -11,6 +11,7 @@ setGlobalOptions({ region: "europe-west1", secrets: [spotifyClientSecretVar] });
 import * as spotify from "./spotify";
 import * as stats from "./stats";
 import * as queue from "./queue";
+import * as quiz from "./quiz";
 
 export const exchangeSpotifyCode = spotify.exchangeSpotifyCode;
 
@@ -25,3 +26,5 @@ export const searchSpotifyTracks = queue.searchSpotifyTracks;
 export const addTrackToQueue = queue.addTrackToQueue;
 export const voteForTrack = queue.voteForTrack;
 export const playNextTrack = queue.playNextTrack;
+export const createQuiz = quiz.createQuiz;
+export const joinQuiz = quiz.joinQuiz;
