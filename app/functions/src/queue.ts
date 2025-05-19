@@ -93,8 +93,7 @@ export const setSpotifyDevice = onCall(
         );
       }
 
-      await sessionRef.update({ deviceId: deviceId });
-      await sessionRef.update({ deviceName: deviceName });
+      await sessionRef.update({ deviceId: deviceId, deviceName: deviceName });
       return { success: true, message: "Spotify device set successfully." };
     } catch (e: any) {
       if (e instanceof HttpsError) throw e;
@@ -289,6 +288,7 @@ export const searchSpotifyTracks = onCall(
           artist: item.artists[0].name,
           album: item.album?.name,
           albumCoverUrl: item.album?.images?.[0]?.url,
+          isrc: item.external_ids.isrc,
         } as TrackData;
       });
 

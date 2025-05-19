@@ -51,6 +51,7 @@ export const getTopTracks = onCall(
           artist: item.artists[0].name,
           album: item.album?.name,
           albumCoverUrl: item.album?.images?.[0]?.url,
+          isrc: item.external_ids.isrc,
         } as TrackData);
       }
 

@@ -86,6 +86,7 @@ function QueueSession() {
   // and plays the next track
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
+    const buffer = 4000; // ms
 
     const monitorPlaybackState = async () => {
       if (typeof sessionId !== "string") {
@@ -102,10 +103,7 @@ function QueueSession() {
         // as long as the songs just play until the end, which will
         // then queue; furthermore, it requires that the host does not
         // enqueue things from Spotify itself)
-        if (
-          currState.progress_ms >=
-          currState.item.duration_ms - 5000 // buffer
-        ) {
+        if (currState.progress_ms >= currState.item.duration_ms - buffer) {
           const resTrack = await playNextTrack({
             sessionId: sessionId,
           });
@@ -122,7 +120,7 @@ function QueueSession() {
     if (isHost && sessionData?.deviceId) {
       monitorPlaybackState();
 
-      interval = setInterval(monitorPlaybackState, 2500);
+      interval = setInterval(monitorPlaybackState, buffer);
     }
 
     return () => {
@@ -282,8 +280,8 @@ function QueueSession() {
   };
 
   const centerContainerCSS =
-    "absolute flex flex-col gap-7 items-center left-1/2 top-[25%] transform -translate-x-1/2 bg-secondary \
-     py-6 px-10 rounded-md";
+    "absolute w-[60%] flex flex-col gap-7 items-center left-1/2 top-[25%]\
+     transform -translate-x-1/2 bg-secondary py-6 px-10 rounded-md";
 
   // console.log(activeSpotifyDevices);
   if (!sessionData.deviceId) {

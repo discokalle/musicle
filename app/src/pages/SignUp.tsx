@@ -38,8 +38,8 @@ function SignUp() {
       const userId = userCred.user.uid;
       await set(ref(db, `usernames/${username}`), userId);
       await set(ref(db, `users/${userId}`), {
-        email,
-        username,
+        email: email,
+        username: username,
         isOnline: true,
       });
       await updateProfile(userCred.user, { displayName: username });

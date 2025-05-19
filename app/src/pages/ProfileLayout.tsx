@@ -14,7 +14,7 @@ import { ref, get, set, DataSnapshot } from "firebase/database";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
-import { auth, db, storage } from "../firebase";
+import { auth, db } from "../firebase";
 
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;

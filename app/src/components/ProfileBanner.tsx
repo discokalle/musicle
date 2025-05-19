@@ -1,7 +1,7 @@
 import RoundButton from "../components/RoundButton";
 
-import { ref, get, set, DataSnapshot } from "firebase/database";
-import { useEffect, useState } from "react";
+import { ref, set, DataSnapshot } from "firebase/database";
+import { useState } from "react";
 
 import defaultProfilePic from "../assets/default-profile-pic.png";
 
@@ -100,6 +100,7 @@ function ProfileBanner({ userSnapshot }: Props) {
             <RoundButton
               onClick={() => document.getElementById("uploadInput")?.click()}
               className="absolute top-1 right-1"
+              title="Upload profile picture"
               size="x_small"
             >
               ✏️

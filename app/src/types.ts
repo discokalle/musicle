@@ -16,6 +16,7 @@ export type TrackData = {
   artist: string;
   album: string;
   albumCoverUrl: string;
+  isrc: string;
 };
 
 export type QueueItemData = {
