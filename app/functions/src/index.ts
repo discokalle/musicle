@@ -1,247 +1,27 @@
 import { setGlobalOptions } from "firebase-functions/v2";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
-import { defineSecret, defineString } from "firebase-functions/params";
 import * as admin from "firebase-admin";
-import axios, { Method } from "axios";
 
+// IMPORTANT: the following must be run before importing other firebase function files
+// ----
 admin.initializeApp();
-const db = admin.database();
-
-const spotifyClientIdVar = defineString("SPOTIFY_CLIENT_ID");
-const spotifyRedirectUriVar = defineString("SPOTIFY_REDIRECT_URI");
-
-// secret is stored in the Google Cloud Secret Manager
-const spotifyClientSecretVar = defineSecret("SPOTIFY_CLIENT_SECRET");
-
+import { spotifyClientSecretVar } from "./config";
 setGlobalOptions({ region: "europe-west1", secrets: [spotifyClientSecretVar] });
+// ----
 
-export const exchangeSpotifyCode = onCall(async (req) => {
-  if (!req.auth) {
-    throw new HttpsError(
-      "unauthenticated",
-      "The function must be called while authenticated."
-    );
-  }
+import * as spotify from "./spotify";
+import * as stats from "./stats";
+import * as queue from "./queue";
 
-  const code = req.data.code;
-  if (!code || typeof code !== "string") {
-    throw new HttpsError(
-      "invalid-argument",
-      "The function must be called with a valid 'code' argument."
-    );
-  }
+export const exchangeSpotifyCode = spotify.exchangeSpotifyCode;
 
-  const userId = req.auth.uid;
+export const getTopTracks = stats.getTopTracks;
 
-  const spotifyClientId = spotifyClientIdVar.value();
-  const spotifyRedirectUri = spotifyRedirectUriVar.value();
-  const spotifyClientSecret = spotifyClientSecretVar.value();
-
-  if (!spotifyClientId || !spotifyClientSecret || !spotifyRedirectUri) {
-    console.error(
-      "Spotify configuration missing in Firebase environment variables."
-    );
-    throw new HttpsError("internal", "Server configuration error.");
-  }
-
-  try {
-    const tokenUrl = "https://accounts.spotify.com/api/token";
-
-    // encode Client ID and Secret for Basic Auth header
-    const authHeader = Buffer.from(
-      `${spotifyClientId}:${spotifyClientSecret}`
-    ).toString("base64");
-
-    const params = new URLSearchParams();
-    params.append("grant_type", "authorization_code");
-    params.append("code", code);
-    params.append("redirect_uri", spotifyRedirectUri);
-
-    const response = await axios.post(tokenUrl, params, {
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Authorization: `Basic ${authHeader}`,
-      },
-    });
-
-    const { access_token, refresh_token, expires_in } = response.data;
-
-    if (!access_token || !refresh_token) {
-      throw new Error("Failed to retrieve tokens from Spotify.");
-    }
-
-    // store the users Spotify token data
-    await db.ref(`users/${userId}/spotify`).set({
-      accessToken: access_token,
-      refreshToken: refresh_token,
-      expiresAt: Date.now() + expires_in * 1000,
-    });
-
-    return { success: true, message: "Spotify connected successfully." };
-    // eslint-disable-next-line
-  } catch (e: any) {
-    console.error(
-      "Error exchanging Spotify code for user:",
-      userId,
-      e.response?.data || e.message || e
-    );
-    throw new HttpsError(
-      "internal",
-      "Failed to connect Spotify account. Please try again later.",
-      e.message
-    );
-  }
-});
-
-const refreshAccessToken = async (userId: string) => {
-  const spotifyClientId = spotifyClientIdVar.value();
-  const spotifyClientSecret = spotifyClientSecretVar.value();
-
-  if (!spotifyClientId || !spotifyClientSecret) {
-    throw new HttpsError(
-      "internal",
-      "Server config error during access token refresh."
-    );
-  }
-
-  const tokenSnapshot = await db
-    .ref(`users/${userId}/spotify/refreshToken`)
-    .once("value");
-  const currRefrTok = tokenSnapshot.val();
-
-  if (!currRefrTok) {
-    await db.ref(`users/${userId}/spotify`).remove();
-    throw new HttpsError("unauthenticated", "Spotify refresh token not found");
-  }
-
-  try {
-    const tokenUrl = "https://accounts.spotify.com/api/token";
-    const authHeader = Buffer.from(
-      `${spotifyClientId}:${spotifyClientSecret}`
-    ).toString("base64");
-
-    const params = new URLSearchParams();
-    params.append("grant_type", "refresh_token");
-    params.append("refresh_token", currRefrTok);
-
-    const res = await axios.post(tokenUrl, params, {
-      headers: {
-        Authorization: `Basic ${authHeader}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-
-    const {
-      access_token: newAccessToken,
-      expires_in: newExpiresIn,
-      refresh_token: newRefreshToken,
-    } = res.data;
-
-    if (!newAccessToken) {
-      throw new Error("No new access token returned by Spotify upon refresh.");
-    }
-
-    const updates: {
-      accessToken: string;
-      expiresAt: number;
-      refreshToken?: string;
-    } = {
-      accessToken: newAccessToken,
-      expiresAt: Date.now() + newExpiresIn * 1000,
-    };
-
-    if (newRefreshToken) {
-      updates.refreshToken = newRefreshToken;
-    }
-
-    await db.ref(`users/${userId}/spotify`).update(updates);
-    console.log(`Successfully refreshed token for user: ${userId}`);
-    return newAccessToken;
-    // eslint-disable-next-line
-  } catch (e: any) {
-    console.error(
-      "Error during Spotify token refresh",
-      userId,
-      e.response?.data || e.message
-    );
-    if (e.response?.data?.error === "invalid_grant") {
-      await db.ref(`users/${userId}/spotify`).remove();
-      throw new HttpsError(
-        "unauthenticated",
-        "Spotify refresh token invalid. Please reconnect."
-      );
-    }
-    throw new HttpsError(
-      "internal",
-      "Error during Spotify token refresh.",
-      e.message
-    );
-  }
-};
-
-export const callSpotifyApi = onCall(
-  { secrets: [spotifyClientSecretVar] },
-  async (req) => {
-    if (!req.auth) {
-      throw new HttpsError("unauthenticated", "Authentication required.");
-    }
-
-    const userId = req.auth.uid;
-
-    const { endpoint, method = "GET", queryParams, bodyData } = req.data;
-
-    if (!endpoint || typeof endpoint !== "string") {
-      throw new HttpsError("invalid-argument", "Invalid 'endpoint' parameter");
-    }
-    if (typeof method !== "string") {
-      throw new HttpsError("invalid-argument", "Invalid 'method' parameter");
-    }
-
-    try {
-      const spotifyDataRef = db.ref(`users/${userId}/spotify`);
-      const snapshot = await spotifyDataRef.once("value");
-      const spotifyData = snapshot.val();
-
-      if (!spotifyData || !spotifyData.accessToken || !spotifyData.expiresAt) {
-        throw new HttpsError(
-          "failed-precondition",
-          "Spotify not connected, or incomplete user token data"
-        );
-      }
-
-      let currAccTok = spotifyData.accessToken;
-      const expiresAt = spotifyData.expiresAt;
-      const bufferTime = 5 * 60 * 1000; // 5 min buffer to refresh token with a margin
-
-      if (Date.now() >= expiresAt - bufferTime) {
-        currAccTok = await refreshAccessToken(userId);
-      }
-
-      const spotifyApiUrl = `https://api.spotify.com${
-        endpoint.startsWith("/") ? "" : "/"
-      }${endpoint}`;
-
-      const res = await axios({
-        method: method as Method,
-        url: spotifyApiUrl,
-        headers: {
-          Authorization: `Bearer ${currAccTok}`,
-          "Content-Type": "application/json",
-        },
-        params: queryParams,
-        data: bodyData,
-      });
-
-      return res.data;
-      // eslint-disable-next-line
-    } catch (e: any) {
-      if (e instanceof HttpsError) {
-        throw e;
-      }
-
-      // TO-DO?: forward Spotify API errors (do later if desired)
-
-      throw new HttpsError("internal", "Failed to call Spotify API", e.message);
-    }
-  }
-);
+export const getActiveSpotifyDevices = queue.getActiveSpotifyDevices;
+export const setSpotifyDevice = queue.setSpotifyDevice;
+export const getSpotifyPlaybackState = queue.getSpotifyPlaybackState;
+export const createSession = queue.createSession;
+export const joinSession = queue.joinSession;
+export const searchSpotifyTracks = queue.searchSpotifyTracks;
+export const addTrackToQueue = queue.addTrackToQueue;
+export const voteForTrack = queue.voteForTrack;
+export const playNextTrack = queue.playNextTrack;
