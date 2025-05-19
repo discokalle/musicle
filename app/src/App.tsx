@@ -37,6 +37,7 @@ function App() {
     ["Queue", "queue"],
     ["Profile", "profile"],
     ["Sign Out", "/"],
+    ["Quiz", "quiz"],
   ];
 
   useEffect(() => {
