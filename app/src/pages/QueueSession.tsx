@@ -5,12 +5,12 @@ import { httpsCallable } from "firebase/functions";
 
 import Button from "../components/Button";
 import SearchBarApi from "../components/SearchBarApi";
+import QueueListItem from "../components/QueueListItem";
 
 import { SessionData, TrackData } from "../types";
 
 import { auth, db, functions } from "../firebase";
-import List from "../components/List";
-import QueueListItem from "../components/QueueListItem";
+import TrackListItem from "../components/TrackListItem";
 
 const getActiveSpotifyDevices = httpsCallable<undefined, { devices: any[] }>(
   functions,
@@ -52,6 +52,8 @@ const playNextTrack = httpsCallable<
 function QueueSession() {
   const navigate = useNavigate();
   const hasNavigatedRef = useRef(false);
+  // used to avoid enqueueing more than one song when a certain song is ending
+  const currEndingTrackUriRef = useRef<string>("");
   const { sessionId } = useParams<{ sessionId: string }>();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [activeSpotifyDevices, setActiveSpotifyDevices] = useState<any[]>([]);
@@ -86,30 +88,38 @@ function QueueSession() {
   // and plays the next track
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    const buffer = 4000; // ms
+    const buffer = 7000; // ms
 
     const monitorPlaybackState = async () => {
-      if (typeof sessionId !== "string") {
-        return;
-      }
-      if (typeof sessionData?.deviceId !== "string") {
+      if (typeof sessionId !== "string" || !sessionData?.deviceId) {
         return;
       }
 
       try {
         const resPlayback = await getSpotifyPlaybackState();
         const currState = resPlayback.data.playbackState;
-        // this logic might need to be changed later (it works fine
-        // as long as the songs just play until the end, which will
-        // then queue; furthermore, it requires that the host does not
-        // enqueue things from Spotify itself)
-        if (currState.progress_ms >= currState.item.duration_ms - buffer) {
+
+        if (currState.item.uri !== currEndingTrackUriRef.current) {
+          currEndingTrackUriRef.current = "";
+        }
+
+        if (
+          currState?.progress_ms >= currState?.item?.duration_ms - buffer &&
+          currEndingTrackUriRef.current !== currState.item.uri
+        ) {
+          // this logic might need to be changed later (it works fine
+          // as long as the songs just play until the end, which will
+          // then queue; furthermore, it requires that the host does not
+          // enqueue things from Spotify itself)
+
+          currEndingTrackUriRef.current = currState.item.uri;
+
           const resTrack = await playNextTrack({
             sessionId: sessionId,
           });
 
           if (resTrack && resTrack.data.playedTrackData) {
-            updateCurrentTrack(resTrack.data.playedTrackData);
+            await updateCurrentTrack(resTrack.data.playedTrackData);
           }
         }
       } catch (e: any) {
@@ -120,7 +130,7 @@ function QueueSession() {
     if (isHost && sessionData?.deviceId) {
       monitorPlaybackState();
 
-      interval = setInterval(monitorPlaybackState, buffer);
+      interval = setInterval(monitorPlaybackState, buffer / 2);
     }
 
     return () => {
@@ -234,8 +244,14 @@ function QueueSession() {
     }
   };
 
-  const searchBarRenderRec = (rec: any) => {
-    return <div>{rec.name + " – " + rec.artist}</div>;
+  const searchBarRenderRec = (rec: TrackData, onClickLogic: () => void) => {
+    return (
+      <TrackListItem
+        track={rec}
+        onClickLogic={onClickLogic}
+        includeAlbumName={false}
+      ></TrackListItem>
+    );
   };
 
   const handleCopySessionId = async () => {
@@ -280,7 +296,7 @@ function QueueSession() {
   };
 
   const centerContainerCSS =
-    "absolute w-[60%] flex flex-col gap-7 items-center left-1/2 top-[25%]\
+    "absolute w-[60%] flex flex-col gap-7 items-center left-1/2 top-1/6\
      transform -translate-x-1/2 bg-secondary py-6 px-10 rounded-md";
 
   // console.log(activeSpotifyDevices);
@@ -288,7 +304,7 @@ function QueueSession() {
     return (
       <div className={centerContainerCSS}>
         <h1 className="text-5xl text-neutral text-center">Choose a device</h1>
-        <List>
+        <ul className="list-group space-y-2">
           {activeSpotifyDevices.map((item, index) => (
             <li
               key={index}
@@ -300,7 +316,7 @@ function QueueSession() {
               {item.name}
             </li>
           ))}
-        </List>
+        </ul>
       </div>
     );
   }
@@ -331,8 +347,9 @@ function QueueSession() {
         matchLogic={searchBarMatchLogic}
         renderRec={searchBarRenderRec}
         inputPlaceholderText="Search for a track..."
+        className="w-125"
       ></SearchBarApi>
-      <List className="text-neutral">
+      <ul className="list-group space-y-2 text-neutral">
         {sessionData?.queue && Object.keys(sessionData.queue).length > 0 ? (
           Object.entries(sessionData.queue)
             // sort queue in descending order based on vote count
@@ -348,7 +365,7 @@ function QueueSession() {
         ) : (
           <div>No tracks in the queue.</div>
         )}
-      </List>
+      </ul>
       {isHost && (
         <Button onClick={handleEndSession} className="absolute right-3 top-3">
           End Session

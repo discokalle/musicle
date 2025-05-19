@@ -105,12 +105,11 @@ function ProfileLayout() {
   ];
 
   const containerCSS =
-    "w-[50%] text-neutral absolute flex flex-col left-[5%] top-[15%] gap-5";
+    "w-[50%] text-neutral absolute left-1/2 top-1/6 -translate-x-1/2 flex flex-col gap-5";
 
   return (
     <div className={containerCSS}>
       <ProfileBanner userSnapshot={userSnapshot}></ProfileBanner>
-
       <div className="flex justify-between gap-8">
         <div className="panel-card flex items-center justify-between flex-grow">
           {subsecs.map(([secName, secLink]) => {

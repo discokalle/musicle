@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 
-import List from "./List";
-
 type Props = {
   apiCall: Function; // a function that makes the api call and returns the results
   matchLogic: Function; // the logic to be used when we search for a query that matches the DB
-  renderRec: (rec: any) => React.ReactNode; // the logic for how to render each item in the results
+  // the logic for how to render each item in the results
+  renderRec: (rec: any, onClickLogic: () => void) => React.ReactNode;
   inputPlaceholderText: string;
   className?: string;
 };
@@ -102,10 +101,11 @@ function SearchBarApi({
     "w-full bg-primary text-neutral rounded-4xl shadow-md/25\
     px-4 py-2 transition duration-250 focus:outline-none focus:ring-2 focus:ring-accent";
 
-  const recsCSS = "absolute top-full w-full z-10 max-h-60 overflow-auto";
+  const recsCSS =
+    "list-group space-y-2 absolute top-full w-full z-10 max-h-80 overflow-auto";
 
-  const recItemCSS =
-    "bg-secondary shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
+  // const recItemCSS =
+  //   "bg-secondary shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
 
   return (
     <div className={containerCSS} ref={searchBarRef}>
@@ -128,17 +128,9 @@ function SearchBarApi({
       ></input>
 
       {showRecs && recs.length > 0 && (
-        <List className={recsCSS}>
-          {recs.map((rec, index) => (
-            <li
-              key={index}
-              onClick={() => handleRecClick(rec)}
-              className={recItemCSS}
-            >
-              {renderRec(rec)}
-            </li>
-          ))}
-        </List>
+        <ul className={recsCSS}>
+          {recs.map((rec) => renderRec(rec, () => handleRecClick(rec)))}
+        </ul>
       )}
     </div>
   );
