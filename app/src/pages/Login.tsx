@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import { AuthErrorCodes, signInWithEmailAndPassword } from "firebase/auth";
-import { ref, get } from "firebase/database";
+import { ref, get, set } from "firebase/database";
 
 import { auth, db } from "../firebase";
 
@@ -23,9 +23,13 @@ function Login() {
           const userSnapshot = await get(ref(db, `users/${userId}`));
           emailAddr = userSnapshot.val().email;
         }
-      } catch (e: any) {}
+      } catch (e: any) {
+        alert(`Could not find user ${email}`);
+        return;
+      }
 
       await signInWithEmailAndPassword(auth, emailAddr, password);
+      await set(ref(db, `users/${auth.currentUser?.uid}/isOnline`), true);
       navigate("/home");
     } catch (e: any) {
       if (e.code == AuthErrorCodes.INVALID_LOGIN_CREDENTIALS) {

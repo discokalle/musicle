@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router";
 import { useState, useEffect, useRef } from "react";
 import {
   ref,
@@ -10,28 +9,35 @@ import {
   limitToFirst,
 } from "firebase/database";
 
-import List from "../components/List";
+import List from "./List";
 
 import { db } from "../firebase";
 
 type Props = {
   dbCollectionName: string;
+  matchLogic: Function; // the logic to be used when we search for a query that matches the DB
   inputPlaceholderText: string;
   className?: string;
 };
 
-function SearchBar({
+function SearchBarDb({
   dbCollectionName,
+  matchLogic,
   inputPlaceholderText,
   className,
 }: Props) {
-  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [recs, setRecs] = useState<string[]>([]); // recs = recommendations
   const [showRecs, setShowRecs] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (input.trim() === "") {
+      setRecs([]);
+      setShowRecs(false);
+      return;
+    }
+
     const fetchRecs = async (prefix: string) => {
       try {
         const searchQuery = query(
@@ -58,22 +64,16 @@ function SearchBar({
       }
     };
 
-    if (input.trim() === "") {
-      setRecs([]);
-      setShowRecs(false);
-      return;
-    }
-
-    // // debouce the queries (only consider one of several close consequent invocations)
-    // const timerId = setTimeout(() => {
-    //   fetchRecs(input);
-    // }, 300);
-
-    // return () => clearTimeout(timerId); // return cleanup function
-
-    // seems to work better w/o debouce
     fetchRecs(input);
   }, [input]);
+
+  const handleMatchAndCleanup = (matchQuery: string) => {
+    setInput(matchQuery);
+    setRecs([]);
+    setShowRecs(false);
+    matchLogic(matchQuery);
+    setInput("");
+  };
 
   const handleKeyDown = async (
     event: React.KeyboardEvent<HTMLInputElement>
@@ -82,22 +82,18 @@ function SearchBar({
       try {
         const snapshot = await get(ref(db, `${dbCollectionName}/${input}`));
         if (snapshot.exists()) {
-          navigate(`/profile/${input}`);
+          handleMatchAndCleanup(input);
         } else {
-          throw new Error("Invalid user.");
+          throw new Error("Invalid input.");
         }
       } catch (e: any) {
-        alert(`The user ${input} does not exist. Please try again.`);
+        alert(`The ${input} does not exist. Please try again.`);
       }
     }
   };
 
   const handleRecClick = (selectedInput: string) => {
-    setInput(selectedInput);
-    setRecs([]);
-    setShowRecs(false);
-    navigate(`/profile/${selectedInput}`);
-    setInput("");
+    handleMatchAndCleanup(selectedInput);
   };
 
   useEffect(() => {
@@ -158,4 +154,4 @@ function SearchBar({
   );
 }
 
-export default SearchBar;
+export default SearchBarDb;

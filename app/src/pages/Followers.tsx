@@ -62,12 +62,8 @@ function Followers() {
       </h1>
       <List>
         {followers.map((flwr, index) => (
-          <li className="panel-card">
-            <Link
-              to={`/profile/${flwr}`}
-              key={index}
-              className="link-highlight"
-            >
+          <li className="panel-card" key={index}>
+            <Link to={`/profile/${flwr}`} className="link-highlight">
               {flwr}
             </Link>
           </li>

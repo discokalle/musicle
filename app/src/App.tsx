@@ -21,9 +21,8 @@ import Following from "./pages/Following";
 import Followers from "./pages/Followers";
 import SpotifyStats from "./pages/SpotifyStats";
 import SpotifyCallback from "./pages/SpotifyCallback";
-import QuizLayout from "./pages/QuizLayout";
-import QuizSingle from "./pages/QuizSingle";
-import QuizMulti from "./pages/QuizMulti";
+import Queue from "./pages/Queue";
+import QueueSession from "./pages/QueueSession";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -35,6 +34,7 @@ function App() {
     ["Sign Up", "sign-up"],
     ["Login", "login"],
     ["Home", "home"],
+    ["Queue", "queue"],
     ["Profile", "profile"],
     ["Sign Out", "/"],
     ["Quiz", "quiz"],
@@ -73,10 +73,8 @@ function App() {
           <Route path="stats" element={<SpotifyStats />} />
         </Route>
         <Route path="/spotify-callback" element={<SpotifyCallback />} />
-        <Route path="/quiz" element={<QuizLayout />}>
-          <Route path="single" element={<QuizSingle />} />
-          <Route path="multi" element={<QuizMulti />} />
-        </Route>
+        <Route path="/queue" element={<Queue />}></Route>
+        <Route path="/queue/:sessionId" element={<QueueSession />}></Route>
       </Routes>
     </Router>
   );

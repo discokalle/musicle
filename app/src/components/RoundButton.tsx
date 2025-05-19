@@ -3,7 +3,7 @@ type Props = {
   className?: string;
   title?: string;
   onClick?: () => void;
-  size?: "small" | "medium" | "large";
+  size?: "x_small" | "small" | "medium" | "large";
 };
 
 function RoundButton({
@@ -14,6 +14,7 @@ function RoundButton({
   size = "medium",
 }: Props) {
   const sizeClasses = {
+    x_small: { wh: "w-4 h-4", text: "text-sm" },
     small: { wh: "w-8 h-8", text: "text-md" },
     medium: { wh: "w-12 h-12", text: "text-lg" },
     large: { wh: "w-16 h-16", text: "text-2xl" },
