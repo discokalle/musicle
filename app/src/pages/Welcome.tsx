@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
 import { auth } from "../firebase";
+
 import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
 
 function Welcome() {

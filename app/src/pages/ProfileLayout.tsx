@@ -108,7 +108,7 @@ function ProfileLayout() {
   ];
 
   const containerCSS =
-    "w-[50%] text-neutral absolute left-1/2 top-1/6 -translate-x-1/2 flex flex-col gap-5";
+    "w-[60%] text-neutral absolute left-1/2 top-1/6 -translate-x-1/2 flex flex-col gap-5";
 
   return (
     <div className={containerCSS}>

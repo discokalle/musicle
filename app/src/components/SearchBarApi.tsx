@@ -102,10 +102,7 @@ function SearchBarApi({
     px-4 py-2 transition duration-250 focus:outline-none focus:ring-2 focus:ring-accent";
 
   const recsCSS =
-    "list-group space-y-2 absolute top-full w-full z-10 max-h-80 overflow-auto";
-
-  // const recItemCSS =
-  //   "bg-secondary shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
+    "rounded-md list-group space-y-2 absolute top-full w-full z-10 max-h-80 overflow-auto";
 
   return (
     <div className={containerCSS} ref={searchBarRef}>

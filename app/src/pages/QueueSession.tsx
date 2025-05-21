@@ -12,7 +12,13 @@ import { auth, db, functions } from "../firebase";
 import TrackListItem from "../components/TrackListItem";
 
 import { SessionData, TrackData } from "../types";
-import { linkHighlightCSS, panelCardCSS } from "../styles";
+import {
+  linkHighlightCSS,
+  panelCardCSS,
+  separatorCSS,
+  subtitleCSS,
+  titleCSS,
+} from "../styles";
 
 const getActiveSpotifyDevices = httpsCallable<undefined, { devices: any[] }>(
   functions,
@@ -252,6 +258,7 @@ function QueueSession() {
         track={rec}
         onClickLogic={onClickLogic}
         includeAlbumName={false}
+        className="!bg-primary cursor-pointer m-1"
       ></TrackListItem>
     );
   };
@@ -298,19 +305,19 @@ function QueueSession() {
   };
 
   const containerCSS =
-    "absolute w-[60%] flex flex-col gap-7 items-center left-1/2 top-1/6\
+    "absolute w-[75%] flex flex-col gap-7 items-center left-1/2 top-1/6\
      transform -translate-x-1/2 bg-secondary py-6 px-10 rounded-md";
 
   // console.log(activeSpotifyDevices);
   if (!sessionData.deviceId) {
     return (
       <div className={containerCSS}>
-        <h1 className="text-5xl text-neutral text-center">Choose a device</h1>
+        <h1 className={titleCSS}>Choose a device</h1>
         <ul className="list-group space-y-2">
           {activeSpotifyDevices.map((item, index) => (
             <li
               key={index}
-              className={clsx(linkHighlightCSS, panelCardCSS, "cursor-pointer")}
+              className={clsx(linkHighlightCSS, panelCardCSS, "!bg-primary")}
               onClick={() => {
                 handleChosenDevice(item.id, item.name);
               }}
@@ -325,34 +332,42 @@ function QueueSession() {
 
   return (
     <div className={containerCSS}>
-      <h1 className="text-3xl text-neutral text-center">
-        Session ID:<br></br>
-        <span
-          className={clsx(
-            linkHighlightCSS,
-            "italic text-accent font-bold cursor-pointer"
-          )}
-          onClick={handleCopySessionId}
-          title="Copy session ID?"
-        >
-          {sessionId}
-        </span>
-      </h1>
-      <p className="text-2xl text-neutral text-center">
-        Playing on "{sessionData.deviceName}"
-      </p>
-      {sessionData?.currentTrack && (
-        <p className="text-xl text-neutral text-center">
-          Currently playing "{sessionData.currentTrack.name}" by "
-          {sessionData.currentTrack.artist}"
+      <div className={clsx(panelCardCSS, "!bg-primary flex flex-col gap-3")}>
+        <h1 className={subtitleCSS}>
+          Session ID:
+          <>&nbsp;&nbsp;</>
+          <span
+            className={clsx(linkHighlightCSS, "italic font-bold")}
+            onClick={handleCopySessionId}
+            title="Copy session ID?"
+          >
+            {sessionId}
+          </span>
+        </h1>
+        <div className={separatorCSS}></div>
+        <p className={"text-large text-neutral text-center"}>
+          Playing on "{sessionData.deviceName}"
         </p>
+      </div>
+      {sessionData?.currentTrack ? (
+        <div className="relative flex flex-col gap-2 px-[20%] items-start">
+          <h1 className="px-2 text-large text-neutral text-center whitespace-nowrap italic">
+            Currently playing...{" "}
+          </h1>
+          <TrackListItem
+            track={sessionData.currentTrack}
+            className="!bg-primary"
+          ></TrackListItem>
+        </div>
+      ) : (
+        <p className="text-neutral">No track is currently playing.</p>
       )}
       <SearchBarApi
         apiCall={searchBarApiCall}
         matchLogic={searchBarMatchLogic}
         renderRec={searchBarRenderRec}
         inputPlaceholderText="Search for a track..."
-        className="w-125"
+        className="w-150"
       ></SearchBarApi>
       <ul className="list-group space-y-2 text-neutral">
         {sessionData?.queue && Object.keys(sessionData.queue).length > 0 ? (
@@ -365,14 +380,18 @@ function QueueSession() {
                 sessionId={sessionId}
                 id={itemId}
                 data={item}
+                className="!bg-primary"
               ></QueueListItem>
             ))
         ) : (
-          <div>No tracks in the queue.</div>
+          <div>No tracks are currently in the queue.</div>
         )}
       </ul>
       {isHost && (
-        <Button onClick={handleEndSession} className="absolute right-3 top-3">
+        <Button
+          onClick={handleEndSession}
+          className="!bg-primary absolute right-3 top-3"
+        >
           End Session
         </Button>
       )}

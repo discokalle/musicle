@@ -120,7 +120,7 @@ function SearchBarDb({
     "list-group space-y-2 absolute top-full w-full z-10 max-h-60 overflow-auto";
 
   const recItemCSS =
-    "bg-secondary shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
+    "bg-primary rounded-md shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
 
   return (
     <div className={containerCSS} ref={searchBarRef}>
