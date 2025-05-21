@@ -28,6 +28,7 @@ export const createQuiz = onCall(async (req: CallableRequest) => {
       hostUserId,
       participants: { [hostUserId]: true },
       createdAt: Date.now(),
+      started: false,
     };
 
     await quizRef.set(newQuiz);
@@ -70,6 +71,44 @@ export const joinQuiz = onCall(
   }
 );
 
+export const startQuiz = onCall(
+  async (req: CallableRequest<{ quizId: string }>) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const userId = req.auth.uid;
+    const { quizId } = req.data;
+
+    if (!quizId || typeof quizId !== "string") {
+      throw new HttpsError("invalid-argument", "Missing or invalid quizId.");
+    }
+
+    const quizRef = db.ref(`quizzes/${quizId}`);
+    const quizSnapshot = await quizRef.once("value");
+
+    if (!quizSnapshot.exists()) {
+      throw new HttpsError("not-found", "Quiz not found.");
+    }
+
+    const quizData = quizSnapshot.val();
+
+    if (quizData.hostUserId !== userId) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only the host can start the quiz."
+      );
+    }
+
+    try {
+      await quizRef.update({ started: true });
+      return { success: true };
+    } catch (e: any) {
+      throw new HttpsError("internal", "Failed to start quiz.", e.message);
+    }
+  }
+);
+
 export const endQuiz = onCall(
   async (req: CallableRequest<{ quizId: string }>) => {
     if (!req.auth) {
@@ -106,6 +145,44 @@ export const endQuiz = onCall(
       return { success: true };
     } catch (e: any) {
       throw new HttpsError("internal", "Failed to end quiz.", e.message);
+    }
+  }
+);
+
+export const getQuizState = onCall(
+  //participants and started.
+  async (req: CallableRequest<{ quizId: string }>) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const { quizId } = req.data;
+    if (!quizId || typeof quizId !== "string") {
+      throw new HttpsError("invalid-argument", "Missing or invalid quizId.");
+    }
+
+    try {
+      const quizSnapshot = await db.ref(`quizzes/${quizId}`).once("value");
+
+      if (!quizSnapshot.exists()) {
+        throw new HttpsError("not-found", "Quiz not found.");
+      }
+
+      const quizData = quizSnapshot.val();
+      const participantIds = quizData.participants
+        ? Object.keys(quizData.participants)
+        : [];
+
+      return {
+        participants: participantIds,
+        started: quizData.started ?? false,
+      };
+    } catch (e: any) {
+      throw new HttpsError(
+        "internal",
+        "Failed to fetch quiz state.",
+        e.message
+      );
     }
   }
 );

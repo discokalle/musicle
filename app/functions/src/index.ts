@@ -28,4 +28,6 @@ export const voteForTrack = queue.voteForTrack;
 export const playNextTrack = queue.playNextTrack;
 export const createQuiz = quiz.createQuiz;
 export const joinQuiz = quiz.joinQuiz;
+export const startQuiz = quiz.startQuiz;
 export const endQuiz = quiz.endQuiz;
+export const getQuizState = quiz.getQuizState;

@@ -1,8 +1,4 @@
-export type Question = {
-  question: string;
-  options: string[];
-  answer: string;
-};
+import type { Question } from "../types";
 
 type Props = {
   question: Question;

@@ -31,6 +31,7 @@ export type QuizSessionData = {
   hostUserId: string;
   participants: Record<string, boolean>;
   createdAt: number;
+  started: boolean;
 };
 
 export type Question = {
