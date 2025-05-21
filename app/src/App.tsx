@@ -1,7 +1,9 @@
+// functions
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 
+// Firebase variables
 import { auth } from "./firebase";
 
 // assets
@@ -40,7 +42,6 @@ function App() {
   const navCols: [string, string][] = [
     ["Sign Up", "sign-up"],
     ["Login", "login"],
-    ["Home", "home"],
     ["Quiz", "quiz"],
     ["Queue", "queue"],
     ["Profile", "profile"],

@@ -2,15 +2,17 @@ import { useNavigate, useParams } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { off, onValue, ref, set, update } from "firebase/database";
 import { httpsCallable } from "firebase/functions";
+import clsx from "clsx";
 
 import Button from "../components/Button";
 import SearchBarApi from "../components/SearchBarApi";
 import QueueListItem from "../components/QueueListItem";
 
-import { SessionData, TrackData } from "../types";
-
 import { auth, db, functions } from "../firebase";
 import TrackListItem from "../components/TrackListItem";
+
+import { SessionData, TrackData } from "../types";
+import { linkHighlightCSS, panelCardCSS } from "../styles";
 
 const getActiveSpotifyDevices = httpsCallable<undefined, { devices: any[] }>(
   functions,
@@ -295,20 +297,20 @@ function QueueSession() {
     }
   };
 
-  const centerContainerCSS =
+  const containerCSS =
     "absolute w-[60%] flex flex-col gap-7 items-center left-1/2 top-1/6\
      transform -translate-x-1/2 bg-secondary py-6 px-10 rounded-md";
 
   // console.log(activeSpotifyDevices);
   if (!sessionData.deviceId) {
     return (
-      <div className={centerContainerCSS}>
+      <div className={containerCSS}>
         <h1 className="text-5xl text-neutral text-center">Choose a device</h1>
         <ul className="list-group space-y-2">
           {activeSpotifyDevices.map((item, index) => (
             <li
               key={index}
-              className="panel-card cursor-pointer link-highlight"
+              className={clsx(linkHighlightCSS, panelCardCSS, "cursor-pointer")}
               onClick={() => {
                 handleChosenDevice(item.id, item.name);
               }}
@@ -322,11 +324,14 @@ function QueueSession() {
   }
 
   return (
-    <div className={centerContainerCSS}>
+    <div className={containerCSS}>
       <h1 className="text-3xl text-neutral text-center">
         Session ID:<br></br>
         <span
-          className="italic text-accent font-bold cursor-pointer link-highlight"
+          className={clsx(
+            linkHighlightCSS,
+            "italic text-accent font-bold cursor-pointer"
+          )}
           onClick={handleCopySessionId}
           title="Copy session ID?"
         >

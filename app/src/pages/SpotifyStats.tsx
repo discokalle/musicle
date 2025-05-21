@@ -1,13 +1,13 @@
 import TrackListItem from "../components/TrackListItem";
 
-import { TrackData } from "../types";
-
 import { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { DataSnapshot } from "firebase/database";
+import { useOutletContext } from "react-router";
 
 import { functions } from "../firebase";
-import { useOutletContext } from "react-router";
+
+import { TrackData } from "../types";
 
 const getTopTracks = httpsCallable<
   { userId: string; timeRange: string },

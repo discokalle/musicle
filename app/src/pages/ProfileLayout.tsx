@@ -3,6 +3,7 @@ import ProfileBanner from "../components/ProfileBanner";
 
 import spotifyLogo from "../assets/spotify-logo-cartoon.png";
 
+import clsx from "clsx";
 import {
   useParams,
   Link,
@@ -15,6 +16,8 @@ import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 import { auth, db } from "../firebase";
+
+import { linkHighlightCSS, panelCardCSS } from "../styles";
 
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
@@ -110,16 +113,24 @@ function ProfileLayout() {
   return (
     <div className={containerCSS}>
       <ProfileBanner userSnapshot={userSnapshot}></ProfileBanner>
-      <div className="flex justify-between gap-8">
-        <div className="panel-card flex items-center justify-between flex-grow">
+      <div className="flex justify-between gap-4">
+        <div
+          className={clsx(
+            panelCardCSS,
+            "flex items-center justify-between flex-grow"
+          )}
+        >
           {subsecs.map(([secName, secLink]) => {
             return (
               <Link
                 key={secName}
                 to={secLink}
-                className={`link-highlight text-lg ${
-                  location.pathname === secLink ? "underline font-bold" : ""
-                }`}
+                className={clsx(
+                  linkHighlightCSS,
+                  `text-lg ${
+                    location.pathname === secLink ? "underline font-bold" : ""
+                  }`
+                )}
               >
                 {secName}
               </Link>

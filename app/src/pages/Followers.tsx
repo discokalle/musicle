@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import { useOutletContext, Link } from "react-router";
 import { DataSnapshot } from "firebase/database";
 import { get, ref } from "firebase/database";
+import clsx from "clsx";
 
 import { db } from "../firebase";
+
+import { linkHighlightCSS, panelCardCSS } from "../styles";
 
 type ProfileContext = { userSnapshot: DataSnapshot };
 
@@ -63,12 +66,12 @@ function Followers() {
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {followers.map((follower) => (
           <li
-            className="panel-card flex flex-row gap-5 items-center"
+            className={clsx(panelCardCSS, "flex flex-row gap-5 items-center")}
             key={follower.username}
           >
             <Link
               to={`/profile/${follower.username}`}
-              className="link-highlight"
+              className={linkHighlightCSS}
             >
               <img
                 src={follower.profilePicture || defaultProfilePic}
@@ -78,7 +81,7 @@ function Followers() {
             </Link>
             <Link
               to={`/profile/${follower.username}`}
-              className="link-highlight"
+              className={linkHighlightCSS}
             >
               <p>{follower.username}</p>
             </Link>

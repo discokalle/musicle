@@ -1,16 +1,19 @@
 import RoundButton from "../components/RoundButton";
 
-import { ref, set, DataSnapshot } from "firebase/database";
-import { useState } from "react";
-
-import defaultProfilePic from "../assets/default-profile-pic.png";
-
-import { auth, db, storage } from "../firebase";
 import {
   uploadBytes,
   ref as storageRef,
   getDownloadURL,
 } from "firebase/storage";
+import { ref, set, DataSnapshot } from "firebase/database";
+import { useState } from "react";
+import clsx from "clsx";
+
+import defaultProfilePic from "../assets/default-profile-pic.png";
+
+import { auth, db, storage } from "../firebase";
+
+import { panelCardCSS } from "../styles";
 
 type Props = {
   userSnapshot: DataSnapshot;
@@ -88,7 +91,7 @@ function ProfileBanner({ userSnapshot }: Props) {
      border-white transform -translate-x-1/4 -translate-y-1/4 shadow-md/25`;
 
   return (
-    <div className="panel-card relative flex items-center gap-5">
+    <div className={clsx(panelCardCSS, "relative flex items-center gap-5")}>
       <div className="w-30 h-30 relative">
         <img
           src={profilePic}

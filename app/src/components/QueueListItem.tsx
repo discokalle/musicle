@@ -1,11 +1,12 @@
 import RoundButton from "./RoundButton";
 
-import { QueueItemData } from "../types";
-
 import { httpsCallable } from "firebase/functions";
+import { Link } from "react-router";
 
 import { auth, functions } from "../firebase";
-import { Link } from "react-router";
+
+import { QueueItemData } from "../types";
+import { linkHighlightCSS } from "../styles";
 
 const voteForTrack = httpsCallable<
   { sessionId: string; queueItemId: string },
@@ -37,7 +38,7 @@ function QueueListItem({ sessionId, id, data }: Props) {
   return (
     <li className={containerCSS}>
       <p>
-        <Link className="link-highlight" to={`/profile/${suggesterUsername}`}>
+        <Link className={linkHighlightCSS} to={`/profile/${suggesterUsername}`}>
           [{suggesterUsername}]
         </Link>
       </p>

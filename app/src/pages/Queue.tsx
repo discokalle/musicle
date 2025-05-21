@@ -6,6 +6,9 @@ import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../firebase";
 import { useEffect, useState } from "react";
 import { get, ref } from "firebase/database";
+import clsx from "clsx";
+
+import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
 
 const createSession = httpsCallable<{}, { sessionId: string }>(
   functions,
@@ -98,20 +101,14 @@ function Queue() {
     return <div>Loading...</div>;
   }
 
-  const centerContainerCSS =
-    "absolute flex flex-col gap-7 items-center left-1/2 top-[40%] transform -translate-x-1/2";
-
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
-
   return (
-    <div className={centerContainerCSS}>
+    <div className={clsx(centerContainerCSS, "!top-[40%]")}>
       <h1 className={titleCSS}>
         This is{" "}
-        <span className="italic text-accent font-bold">THE LIVE QUEUE!</span>
+        <span className="italic text-accent font-bold">THE LIVE QUEUE</span>
       </h1>
-      <p className="text-neutral text-xl">
-        Gather your friends and queue songs in a joint Spotify session in
+      <p className={subtitleCSS}>
+        Gather your friends and queue songs fairly with a voting system in
         real-time!
       </p>
 
