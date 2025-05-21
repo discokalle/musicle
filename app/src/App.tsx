@@ -26,6 +26,7 @@ import QueueSession from "./pages/QueueSession";
 import QuizLayout from "./pages/QuizLayout";
 import QuizSingle from "./pages/QuizSingle";
 import QuizMulti from "./pages/QuizMulti";
+import QuizSession from "./pages/QuizSession";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -81,6 +82,7 @@ function App() {
         <Route path="/quiz" element={<QuizLayout />}>
           <Route path="single" element={<QuizSingle />} />
           <Route path="multi" element={<QuizMulti />} />
+          <Route path="multi/:quizId" element={<QuizSession />} />
         </Route>
       </Routes>
     </Router>

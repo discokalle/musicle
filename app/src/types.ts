@@ -26,3 +26,17 @@ export type QueueItemData = {
   voteCount: number;
   votes: Record<string, boolean>;
 };
+
+export type QuizSessionData = {
+  hostUserId: string;
+  participants: Record<string, boolean>;
+  createdAt: number;
+};
+
+export type Question = {
+  question: string;
+  options: string[];
+  answer: string;
+};
+
+export type QuizData = Question[];

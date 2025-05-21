@@ -9,16 +9,16 @@ import { auth, db, functions } from "../firebase";
 import { useEffect, useState } from "react";
 import { get, ref } from "firebase/database";
 
-const createSession = httpsCallable<{}, { sessionId: string }>(
+const createQuiz = httpsCallable<{}, { quizId: string }>(
   functions,
-  "createSession"
+  "createQuiz"
 );
-const joinSession = httpsCallable<{ sessionId: string }, { success: boolean }>(
+const joinQuiz = httpsCallable<{ quizId: string }, { success: boolean }>(
   functions,
-  "joinSession"
+  "joinQuiz"
 );
 
-function Queue() {
+function QuizMulti() {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
@@ -26,7 +26,7 @@ function Queue() {
   useEffect(() => {
     setIsLoading(true);
 
-    // handles alert passed from QueueSession (e.g., to alert the user that
+    // handles alert passed from QuizSession (e.g., to alert the user that
     // the host ended the session)
     if (location.state?.message) {
       // alert w/ small delay to allow re-navigation to complete
@@ -38,10 +38,10 @@ function Queue() {
       return () => clearTimeout(timerId);
     }
 
-    const handleIfUserIsHosting = async () => {
+    const handleIfUserIsHostingQuiz = async () => {
       try {
         const snapshot = await get(
-          ref(db, `users/${auth.currentUser?.uid}/hostingSessionId`)
+          ref(db, `users/${auth.currentUser?.uid}/hostingQuizId`)
         );
 
         if (snapshot.exists()) {
@@ -54,43 +54,40 @@ function Queue() {
       }
     };
 
-    handleIfUserIsHosting();
+    handleIfUserIsHostingQuiz();
   }, [location.state?.message, navigate]);
 
-  const handleCreateSession = async () => {
+  const handleCreateQuiz = async () => {
     try {
-      const res = await createSession();
+      const res = await createQuiz();
       if (!res) {
-        alert("Failed to create Queue session.");
+        alert("Failed to create Quiz.");
         return;
       }
 
-      const data = res.data as { sessionId: string };
-      const sessionId = data.sessionId;
-      // alert("Queue session created successfully!");
-      navigate(sessionId);
+      const quizId = res.data.quizId;
+      // alert("Quiz session created successfully!");
+      navigate(quizId);
     } catch (e: any) {
       console.log(e.code, e.message);
     }
   };
 
-  const handleJoinSession = async () => {
-    const sessionIdInput = window.prompt(
-      "Please enter the Session ID to join:"
-    );
+  const handleJoinQuiz = async () => {
+    const quizIdInput = window.prompt("Please enter the Quiz ID to join:");
 
-    if (sessionIdInput === null || sessionIdInput.trim() === "") {
+    if (quizIdInput === null || quizIdInput.trim() === "") {
       return;
     }
 
     try {
-      const res = await joinSession({ sessionId: sessionIdInput });
+      const res = await joinQuiz({ quizId: quizIdInput });
       if (!res || !res.data?.success) {
-        alert("Failed to join Queue session.");
+        alert("Failed to join Quiz.");
         return;
       }
 
-      navigate(sessionIdInput);
+      navigate(quizIdInput);
     } catch (e: any) {
       alert(`An error occurred while attempting to connect: ${e.message}`);
     }
@@ -109,20 +106,18 @@ function Queue() {
   return (
     <div className={centerContainerCSS}>
       <h1 className={titleCSS}>
-        This is{" "}
-        <span className="italic text-accent font-bold">THE LIVE QUEUE!</span>
+        This is <span className="italic text-accent font-bold">THE QUIZ!</span>
       </h1>
       <p className="text-neutral text-xl">
-        Gather your friends and queue songs in a joint Spotify session in
-        real-time!
+        Gather your friends and compete in quizzes!
       </p>
 
       <div className="flex gap-10">
-        <Button onClick={handleCreateSession}>Create Queue</Button>
-        <Button onClick={handleJoinSession}>Join Queue</Button>
+        <Button onClick={handleCreateQuiz}>Create Quiz</Button>
+        <Button onClick={handleJoinQuiz}>Join Quiz</Button>
       </div>
     </div>
   );
 }
 
-export default Queue;
+export default QuizMulti;
