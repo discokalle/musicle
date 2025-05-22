@@ -1,5 +1,5 @@
 import { SongInfo } from "./song-info";
-import { Question } from "./components/QuizCard";
+import { Question } from "./types";
 
 export function generateQuestions(song: SongInfo): Question[] {
   const questions: Question[] = [];

@@ -4,7 +4,7 @@ import {
   HttpsError,
   onCall,
 } from "firebase-functions/v2/https";
-import { QuizSessionData } from "../../src/types";
+import { QuizSessionData, Question } from "../../src/types";
 
 const db = admin.database();
 
@@ -17,6 +17,7 @@ export const createQuiz = onCall(async (req: CallableRequest) => {
   }
 
   const hostUserId = req.auth.uid;
+  //const questions = req.data;
 
   try {
     const quizRef = db.ref("quizzes").push();
@@ -29,6 +30,7 @@ export const createQuiz = onCall(async (req: CallableRequest) => {
       participants: { [hostUserId]: true },
       createdAt: Date.now(),
       started: false,
+      //questions,
     };
 
     await quizRef.set(newQuiz);
@@ -140,8 +142,8 @@ export const endQuiz = onCall(
     }
 
     try {
-      await quizRef.remove(); // remove the quiz session
-      await db.ref(`users/${userId}/hostingQuizId`).remove(); // clear host's quiz id
+      await quizRef.remove();
+      await db.ref(`users/${userId}/hostingQuizId`).remove();
       return { success: true };
     } catch (e: any) {
       throw new HttpsError("internal", "Failed to end quiz.", e.message);
@@ -176,6 +178,7 @@ export const getQuizState = onCall(
       return {
         participants: participantIds,
         started: quizData.started ?? false,
+        isrcs: quizData.isrcs ?? {},
       };
     } catch (e: any) {
       throw new HttpsError(
@@ -183,6 +186,39 @@ export const getQuizState = onCall(
         "Failed to fetch quiz state.",
         e.message
       );
+    }
+  }
+);
+
+export const setParticipantIsrc = onCall(
+  async (
+    req: CallableRequest<{ quizId: string; userId: string; isrcs: string[] }>
+  ) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const { quizId, userId, isrcs } = req.data;
+
+    if (!quizId || !userId || !Array.isArray(isrcs) || isrcs.length === 0) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing quizId, userId, or valid isrcs array."
+      );
+    }
+
+    const quizRef = db.ref(`quizzes/${quizId}`);
+    const snapshot = await quizRef.once("value");
+
+    if (!snapshot.exists()) {
+      throw new HttpsError("not-found", "Quiz not found.");
+    }
+
+    try {
+      await quizRef.child(`isrcs/${userId}`).set(isrcs);
+      return { success: true };
+    } catch (e: any) {
+      throw new HttpsError("internal", "Failed to store ISRC.", e.message);
     }
   }
 );

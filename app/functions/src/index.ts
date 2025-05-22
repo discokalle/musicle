@@ -31,3 +31,4 @@ export const joinQuiz = quiz.joinQuiz;
 export const startQuiz = quiz.startQuiz;
 export const endQuiz = quiz.endQuiz;
 export const getQuizState = quiz.getQuizState;
+export const setParticipantIsrc = quiz.setParticipantIsrc;
