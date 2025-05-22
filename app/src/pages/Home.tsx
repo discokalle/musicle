@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import Button from "../components/Button";
 
 import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
@@ -9,13 +10,16 @@ function Home() {
         This is <span className="italic text-accent font-bold">MUSICLE</span>
       </h1>
       <p className={subtitleCSS}>
-        Listen to music in a fair voting-based queue, or play a music quiz that
-        considers the music taste of all your friends!
+        Grab some friends and host a live queue or play a music quiz!
       </p>
 
       <div className="flex gap-10">
-        <Button size="large">Queue</Button>
-        <Button size="large">Quiz</Button>
+        <Link to="/queue">
+          <Button size="large">Queue</Button>
+        </Link>
+        <Link to="/quiz">
+          <Button size="large">Quiz</Button>
+        </Link>
       </div>
     </div>
   );

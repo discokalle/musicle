@@ -6,7 +6,6 @@ import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../firebase";
 import { useEffect, useState } from "react";
 import { get, ref } from "firebase/database";
-import clsx from "clsx";
 
 import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
 
@@ -102,7 +101,7 @@ function Queue() {
   }
 
   return (
-    <div className={clsx(centerContainerCSS, "!top-[40%]")}>
+    <div className={centerContainerCSS}>
       <h1 className={titleCSS}>
         This is{" "}
         <span className="italic text-accent font-bold">THE LIVE QUEUE</span>
@@ -113,8 +112,12 @@ function Queue() {
       </p>
 
       <div className="flex gap-10">
-        <Button onClick={handleCreateSession}>Create Queue</Button>
-        <Button onClick={handleJoinSession}>Join Queue</Button>
+        <Button onClick={handleCreateSession} size="large">
+          Create
+        </Button>
+        <Button onClick={handleJoinSession} size="large">
+          Join
+        </Button>
       </div>
     </div>
   );

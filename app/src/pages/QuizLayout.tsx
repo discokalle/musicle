@@ -1,5 +1,4 @@
 import { Link } from "react-router";
-import clsx from "clsx";
 
 import Button from "../components/Button";
 
@@ -7,7 +6,7 @@ import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
 
 function QuizLayout() {
   return (
-    <div className={clsx(centerContainerCSS, "!top-[40%]")}>
+    <div className={centerContainerCSS}>
       <h1 className={titleCSS}>
         This is{" "}
         <span className="italic text-accent font-bold">THE MUSIC QUIZ</span>
@@ -18,10 +17,10 @@ function QuizLayout() {
       </p>
       <div className="flex gap-10">
         <Link to="single">
-          <Button>Single</Button>
+          <Button size="large">Single</Button>
         </Link>
         <Link to="multi">
-          <Button>Multiplayer</Button>
+          <Button size="large">Multiplayer</Button>
         </Link>
       </div>
     </div>
