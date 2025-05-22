@@ -1,14 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   onCall,
   CallableRequest,
   HttpsError,
 } from "firebase-functions/v2/https";
-// import * as admin from "firebase-admin";
 
 import { callSpotifyApi } from "./spotify";
 import { TrackData } from "../../src/types";
-
-// const db = admin.database();
 
 export const getTopTracks = onCall(
   async (req: CallableRequest<{ userId: string; timeRange: string }>) => {
@@ -43,7 +41,7 @@ export const getTopTracks = onCall(
         userId: userId,
       });
 
-      let topTracks: TrackData[] = [];
+      const topTracks: TrackData[] = [];
       for (const item of res.items) {
         topTracks.push({
           uri: item.uri,
