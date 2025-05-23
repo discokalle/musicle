@@ -1,19 +1,37 @@
-import { Link } from "react-router";
 import Button from "../components/Button";
 
-function Welcome() {
-  const centerContainerCSS =
-    "absolute flex flex-col gap-7 items-center left-1/2 top-[40%] transform -translate-x-1/2";
+import { Link, useNavigate } from "react-router";
+import { useEffect, useState } from "react";
 
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
+import { auth } from "../firebase";
+
+import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
+
+function Welcome() {
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+
+  // prevent logged-in user from navigating to welcome page
+  useEffect(() => {
+    setIsLoading(true);
+    if (auth?.currentUser) {
+      navigate("/home");
+    }
+    setIsLoading(false);
+  }, [auth]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className={centerContainerCSS}>
       <h1 className={titleCSS}>
-        WELCOME TO{" "}
-        <span className="italic text-accent font-bold">MUSICLE!</span>
+        WELCOME TO <span className="italic text-accent font-bold">MUSICLE</span>
       </h1>
+      <p className={subtitleCSS}>
+        The social music app that makes any get-together better!
+      </p>
       <div className="flex gap-10">
         <Link to="/sign-up">
           <Button size="large">Sign Up</Button>

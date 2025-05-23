@@ -2,15 +2,23 @@ import { useNavigate, useParams } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { off, onValue, ref, set, update } from "firebase/database";
 import { httpsCallable } from "firebase/functions";
+import clsx from "clsx";
 
 import Button from "../components/Button";
 import SearchBarApi from "../components/SearchBarApi";
-
-import { SessionData, TrackData } from "../types";
+import QueueListItem from "../components/QueueListItem";
 
 import { auth, db, functions } from "../firebase";
-import List from "../components/List";
-import QueueListItem from "../components/QueueListItem";
+import TrackListItem from "../components/TrackListItem";
+
+import { SessionData, TrackData } from "../types";
+import {
+  linkHighlightCSS,
+  panelCardCSS,
+  separatorCSS,
+  subtitleCSS,
+  titleCSS,
+} from "../styles";
 
 const getActiveSpotifyDevices = httpsCallable<undefined, { devices: any[] }>(
   functions,
@@ -52,6 +60,8 @@ const playNextTrack = httpsCallable<
 function QueueSession() {
   const navigate = useNavigate();
   const hasNavigatedRef = useRef(false);
+  // used to avoid enqueueing more than one song when a certain song is ending
+  const currEndingTrackUriRef = useRef<string>("");
   const { sessionId } = useParams<{ sessionId: string }>();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [activeSpotifyDevices, setActiveSpotifyDevices] = useState<any[]>([]);
@@ -86,30 +96,38 @@ function QueueSession() {
   // and plays the next track
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
-    const buffer = 4000; // ms
+    const buffer = 7000; // ms
 
     const monitorPlaybackState = async () => {
-      if (typeof sessionId !== "string") {
-        return;
-      }
-      if (typeof sessionData?.deviceId !== "string") {
+      if (typeof sessionId !== "string" || !sessionData?.deviceId) {
         return;
       }
 
       try {
         const resPlayback = await getSpotifyPlaybackState();
         const currState = resPlayback.data.playbackState;
-        // this logic might need to be changed later (it works fine
-        // as long as the songs just play until the end, which will
-        // then queue; furthermore, it requires that the host does not
-        // enqueue things from Spotify itself)
-        if (currState.progress_ms >= currState.item.duration_ms - buffer) {
+
+        if (currState.item.uri !== currEndingTrackUriRef.current) {
+          currEndingTrackUriRef.current = "";
+        }
+
+        if (
+          currState?.progress_ms >= currState?.item?.duration_ms - buffer &&
+          currEndingTrackUriRef.current !== currState.item.uri
+        ) {
+          // this logic might need to be changed later (it works fine
+          // as long as the songs just play until the end, which will
+          // then queue; furthermore, it requires that the host does not
+          // enqueue things from Spotify itself)
+
+          currEndingTrackUriRef.current = currState.item.uri;
+
           const resTrack = await playNextTrack({
             sessionId: sessionId,
           });
 
           if (resTrack && resTrack.data.playedTrackData) {
-            updateCurrentTrack(resTrack.data.playedTrackData);
+            await updateCurrentTrack(resTrack.data.playedTrackData);
           }
         }
       } catch (e: any) {
@@ -120,7 +138,7 @@ function QueueSession() {
     if (isHost && sessionData?.deviceId) {
       monitorPlaybackState();
 
-      interval = setInterval(monitorPlaybackState, buffer);
+      interval = setInterval(monitorPlaybackState, buffer / 2);
     }
 
     return () => {
@@ -234,8 +252,15 @@ function QueueSession() {
     }
   };
 
-  const searchBarRenderRec = (rec: any) => {
-    return <div>{rec.name + " – " + rec.artist}</div>;
+  const searchBarRenderRec = (rec: TrackData, onClickLogic: () => void) => {
+    return (
+      <TrackListItem
+        track={rec}
+        onClickLogic={onClickLogic}
+        includeAlbumName={false}
+        className="!bg-primary cursor-pointer m-1"
+      ></TrackListItem>
+    );
   };
 
   const handleCopySessionId = async () => {
@@ -279,20 +304,20 @@ function QueueSession() {
     }
   };
 
-  const centerContainerCSS =
-    "absolute w-[60%] flex flex-col gap-7 items-center left-1/2 top-[25%]\
+  const containerCSS =
+    "absolute w-[75%] flex flex-col gap-7 items-center left-1/2 top-1/6\
      transform -translate-x-1/2 bg-secondary py-6 px-10 rounded-md";
 
   // console.log(activeSpotifyDevices);
   if (!sessionData.deviceId) {
     return (
-      <div className={centerContainerCSS}>
-        <h1 className="text-5xl text-neutral text-center">Choose a device</h1>
-        <List>
+      <div className={containerCSS}>
+        <h1 className={titleCSS}>Choose a device</h1>
+        <ul className="list-group space-y-2">
           {activeSpotifyDevices.map((item, index) => (
             <li
               key={index}
-              className="panel-card cursor-pointer link-highlight"
+              className={clsx(linkHighlightCSS, panelCardCSS, "!bg-primary")}
               onClick={() => {
                 handleChosenDevice(item.id, item.name);
               }}
@@ -300,39 +325,51 @@ function QueueSession() {
               {item.name}
             </li>
           ))}
-        </List>
+        </ul>
       </div>
     );
   }
 
   return (
-    <div className={centerContainerCSS}>
-      <h1 className="text-3xl text-neutral text-center">
-        Session ID:<br></br>
-        <span
-          className="italic text-accent font-bold cursor-pointer link-highlight"
-          onClick={handleCopySessionId}
-          title="Copy session ID?"
-        >
-          {sessionId}
-        </span>
-      </h1>
-      <p className="text-2xl text-neutral text-center">
-        Playing on "{sessionData.deviceName}"
-      </p>
-      {sessionData?.currentTrack && (
-        <p className="text-xl text-neutral text-center">
-          Currently playing "{sessionData.currentTrack.name}" by "
-          {sessionData.currentTrack.artist}"
+    <div className={containerCSS}>
+      <div className={clsx(panelCardCSS, "!bg-primary flex flex-col gap-3")}>
+        <h1 className={subtitleCSS}>
+          Session ID:
+          <>&nbsp;&nbsp;</>
+          <span
+            className={clsx(linkHighlightCSS, "italic font-bold")}
+            onClick={handleCopySessionId}
+            title="Copy session ID?"
+          >
+            {sessionId}
+          </span>
+        </h1>
+        <div className={separatorCSS}></div>
+        <p className={"text-large text-neutral text-center"}>
+          Playing on "{sessionData.deviceName}"
         </p>
+      </div>
+      {sessionData?.currentTrack ? (
+        <div className="relative flex flex-col gap-2 px-[20%] items-start">
+          <h1 className="px-2 text-large text-neutral text-center whitespace-nowrap italic">
+            Currently playing...{" "}
+          </h1>
+          <TrackListItem
+            track={sessionData.currentTrack}
+            className="!bg-primary"
+          ></TrackListItem>
+        </div>
+      ) : (
+        <p className="text-neutral">No track is currently playing.</p>
       )}
       <SearchBarApi
         apiCall={searchBarApiCall}
         matchLogic={searchBarMatchLogic}
         renderRec={searchBarRenderRec}
         inputPlaceholderText="Search for a track..."
+        className="w-150"
       ></SearchBarApi>
-      <List className="text-neutral">
+      <ul className="list-group space-y-2 text-neutral">
         {sessionData?.queue && Object.keys(sessionData.queue).length > 0 ? (
           Object.entries(sessionData.queue)
             // sort queue in descending order based on vote count
@@ -343,14 +380,18 @@ function QueueSession() {
                 sessionId={sessionId}
                 id={itemId}
                 data={item}
+                className="!bg-primary"
               ></QueueListItem>
             ))
         ) : (
-          <div>No tracks in the queue.</div>
+          <div>No tracks are currently in the queue.</div>
         )}
-      </List>
+      </ul>
       {isHost && (
-        <Button onClick={handleEndSession} className="absolute right-3 top-3">
+        <Button
+          onClick={handleEndSession}
+          className="!bg-primary absolute right-3 top-3"
+        >
           End Session
         </Button>
       )}

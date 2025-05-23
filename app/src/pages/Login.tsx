@@ -7,6 +7,9 @@ import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
 
+import { centerContainerCSS, titleCSS } from "../styles";
+import clsx from "clsx";
+
 function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState(""); // note: either username or email
@@ -48,18 +51,12 @@ function Login() {
     }
   };
 
-  const centerContainerCSS =
-    "absolute flex flex-col gap-10 items-center left-1/2 top-[30%] transform -translate-x-1/2";
-
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
-
   const inputCSS =
     "text-neutral w-[90%] mx-auto p-2 border border-gray-300 rounded-md\
      focus:outline-none focus:ring-2 focus:ring-accent";
 
   return (
-    <div className={centerContainerCSS}>
+    <div className={clsx(centerContainerCSS, "!gap-10")}>
       <h1 className={titleCSS}>Login To Your Account</h1>
       <div className="flex flex-col gap-5 text-xl w-full">
         <input

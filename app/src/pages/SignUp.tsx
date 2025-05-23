@@ -6,10 +6,13 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { ref, set, get } from "firebase/database";
+import clsx from "clsx";
 
 import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
+
+import { centerContainerCSS, titleCSS } from "../styles";
 
 function SignUp() {
   const navigate = useNavigate();
@@ -64,18 +67,12 @@ function SignUp() {
     }
   };
 
-  const centerContainerCSS =
-    "absolute flex flex-col gap-10 items-center left-1/2 top-[30%] transform -translate-x-1/2";
-
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
-
   const inputCSS =
     "text-neutral w-[90%] mx-auto p-2 border border-gray-300 rounded-md\
      focus:outline-none focus:ring-2 focus:ring-accent";
 
   return (
-    <div className={centerContainerCSS}>
+    <div className={clsx(centerContainerCSS, "!gap-10")}>
       <h1 className={titleCSS}>Create Your Account</h1>
       <div className="flex flex-col gap-5 text-xl w-full">
         <input

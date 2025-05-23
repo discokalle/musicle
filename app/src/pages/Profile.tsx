@@ -1,13 +1,16 @@
 // import { useOutletContext } from "react-router";
-import { DataSnapshot } from "firebase/database";
+// import { DataSnapshot } from "firebase/database";
+import clsx from "clsx";
 
-type ProfileContext = { userSnapshot: DataSnapshot };
+import { panelCardCSS } from "../styles";
+
+// type ProfileContext = { userSnapshot: DataSnapshot };
 
 function Profile() {
   // const { userSnapshot } = useOutletContext<ProfileContext>();
 
   return (
-    <div className="flex flex-col gap-5 panel-card p-4">
+    <div className={clsx(panelCardCSS, "flex flex-col gap-5 p-4")}>
       <h2 className="text-xl font-semibold border-b border-gray-600 pb-2">
         Overview
       </h2>

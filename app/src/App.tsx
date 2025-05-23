@@ -1,7 +1,9 @@
+// functions
 import { BrowserRouter as Router, Routes, Route } from "react-router";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 
+// Firebase variables
 import { auth } from "./firebase";
 
 // assets
@@ -15,14 +17,21 @@ import Welcome from "./pages/Welcome";
 import SignUp from "./pages/SignUp";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+
 import ProfileLayout from "./pages/ProfileLayout";
 import Profile from "./pages/Profile";
 import Following from "./pages/Following";
 import Followers from "./pages/Followers";
-import SpotifyStats from "./pages/SpotifyStats";
+
 import SpotifyCallback from "./pages/SpotifyCallback";
+import SpotifyStats from "./pages/SpotifyStats";
+
 import Queue from "./pages/Queue";
 import QueueSession from "./pages/QueueSession";
+
+import QuizLayout from "./pages/QuizLayout";
+import QuizSingle from "./pages/QuizSingle";
+import QuizMulti from "./pages/QuizMulti";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -33,11 +42,10 @@ function App() {
   const navCols: [string, string][] = [
     ["Sign Up", "sign-up"],
     ["Login", "login"],
-    ["Home", "home"],
+    ["Quiz", "quiz"],
     ["Queue", "queue"],
     ["Profile", "profile"],
     ["Sign Out", "/"],
-    ["Quiz", "quiz"],
   ];
 
   useEffect(() => {
@@ -75,6 +83,10 @@ function App() {
         <Route path="/spotify-callback" element={<SpotifyCallback />} />
         <Route path="/queue" element={<Queue />}></Route>
         <Route path="/queue/:sessionId" element={<QueueSession />}></Route>
+        <Route path="/quiz" element={<QuizLayout />}>
+          <Route path="single" element={<QuizSingle />} />
+          <Route path="multi" element={<QuizMulti />} />
+        </Route>
       </Routes>
     </Router>
   );

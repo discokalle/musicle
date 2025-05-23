@@ -9,8 +9,6 @@ import {
   limitToFirst,
 } from "firebase/database";
 
-import List from "./List";
-
 import { db } from "../firebase";
 
 type Props = {
@@ -118,10 +116,11 @@ function SearchBarDb({
     "w-full bg-primary text-neutral rounded-4xl shadow-md/25\
     px-4 py-2 transition duration-250 focus:outline-none focus:ring-2 focus:ring-accent";
 
-  const recsCSS = "absolute top-full w-full z-10 max-h-60 overflow-auto";
+  const recsCSS =
+    "list-group space-y-2 absolute top-full w-full z-10 max-h-60 overflow-auto";
 
   const recItemCSS =
-    "bg-secondary shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
+    "bg-primary rounded-md shadow-md/30 text-neutral m-1 px-4 py-2 hover:text-accent cursor-pointer";
 
   return (
     <div className={containerCSS} ref={searchBarRef}>
@@ -138,7 +137,7 @@ function SearchBarDb({
       ></input>
 
       {showRecs && recs.length > 0 && (
-        <List className={recsCSS}>
+        <ul className={recsCSS}>
           {recs.map((rec) => (
             <li
               key={rec}
@@ -148,7 +147,7 @@ function SearchBarDb({
               {rec}
             </li>
           ))}
-        </List>
+        </ul>
       )}
     </div>
   );

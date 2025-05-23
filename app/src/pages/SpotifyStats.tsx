@@ -1,14 +1,13 @@
-import List from "../components/List";
 import TrackListItem from "../components/TrackListItem";
-
-import { TrackData } from "../types";
 
 import { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
 import { DataSnapshot } from "firebase/database";
+import { useOutletContext } from "react-router";
 
 import { functions } from "../firebase";
-import { useOutletContext } from "react-router";
+
+import { TrackData } from "../types";
 
 const getTopTracks = httpsCallable<
   { userId: string; timeRange: string },
@@ -58,15 +57,23 @@ function SpotifyStats() {
     return <div>Loading...</div>;
   }
 
+  if (userSnapshot?.val().spotify === undefined) {
+    return (
+      <h1 className="text-neutral text-xl">{`${
+        userSnapshot?.val().username
+      } does not have Spotify connected.`}</h1>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <h1 className="text-neutral text-2xl font-bold">Top Tracks</h1>
-      <List>
+      <ul className="list-group space-y-2">
         {topTracks &&
           topTracks.map((item, index) => (
-            <TrackListItem key={index} {...item}></TrackListItem>
+            <TrackListItem key={index} track={item}></TrackListItem>
           ))}
-      </List>
+      </ul>
     </div>
   );
 }

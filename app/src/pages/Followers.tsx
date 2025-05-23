@@ -1,17 +1,20 @@
-import List from "../components/List";
+import defaultProfilePic from "../assets/default-profile-pic.png";
 
 import { useState, useEffect } from "react";
 import { useOutletContext, Link } from "react-router";
 import { DataSnapshot } from "firebase/database";
 import { get, ref } from "firebase/database";
+import clsx from "clsx";
 
 import { db } from "../firebase";
+
+import { linkHighlightCSS, panelCardCSS } from "../styles";
 
 type ProfileContext = { userSnapshot: DataSnapshot };
 
 function Followers() {
   const { userSnapshot } = useOutletContext<ProfileContext>();
-  const [followers, setFollowers] = useState<string[]>([]);
+  const [followers, setFollowers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -36,7 +39,7 @@ function Followers() {
         setFollowers(
           followerSnapshots
             .map((snapshot) => {
-              return snapshot.exists() ? snapshot.val().username : null;
+              return snapshot.exists() ? snapshot.val() : null;
             })
             .filter((follower) => follower !== null)
         );
@@ -60,15 +63,31 @@ function Followers() {
       <h1 className="text-neutral text-2xl font-bold">
         Followers ({followers.length})
       </h1>
-      <List>
-        {followers.map((flwr, index) => (
-          <li className="panel-card" key={index}>
-            <Link to={`/profile/${flwr}`} className="link-highlight">
-              {flwr}
+      <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {followers.map((follower) => (
+          <li
+            className={clsx(panelCardCSS, "flex flex-row gap-5 items-center")}
+            key={follower.username}
+          >
+            <Link
+              to={`/profile/${follower.username}`}
+              className={linkHighlightCSS}
+            >
+              <img
+                src={follower.profilePicture || defaultProfilePic}
+                className="h-10 w-10 rounded-md object-cover shadow-md/25"
+                alt={follower.username}
+              ></img>
+            </Link>
+            <Link
+              to={`/profile/${follower.username}`}
+              className={linkHighlightCSS}
+            >
+              <p>{follower.username}</p>
             </Link>
           </li>
         ))}
-      </List>
+      </ul>
     </div>
   );
 }
