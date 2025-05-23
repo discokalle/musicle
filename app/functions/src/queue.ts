@@ -419,6 +419,7 @@ export const voteForTrack = onCall(
 
 /** SPOTIFY QUEUE SETUP FOR SESSION ***********************************/
 
+/**
 export const skipCurrentTrack = onCall(
   async (req: CallableRequest<{ sessionId: string }>) => {
     if (!req.auth) {
@@ -477,6 +478,7 @@ export const skipCurrentTrack = onCall(
     }
   }
 );
+*/
 
 // changes the playback state
 // `play` = true starts/resumes playback, false pauses playback
@@ -546,9 +548,9 @@ export const changePlaybackState = onCall(
   }
 );
 
+/**
 // Returns not only the items that are enqueued manually, but also items that follow in a playlist or
 // that Spotify recommends... So this cannot be used to detect the length of the actual queue! :(
-/**
 export const getSpotifyQueue = onCall(
   async (req: CallableRequest<{ sessionId: string }>) => {
     if (!req.auth) {

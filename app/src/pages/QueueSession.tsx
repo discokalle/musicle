@@ -35,11 +35,6 @@ const changePlaybackState = httpsCallable<
   { success: boolean; message: string }
 >(functions, "changePlaybackState");
 
-// const skipCurrentTrack = httpsCallable<
-//   { sessionId: string },
-//   { success: boolean; message: string }
-// >(functions, "skipCurrentTrack;");
-
 const getSpotifyPlaybackState = httpsCallable<
   undefined,
   { playbackState: any }
@@ -102,6 +97,18 @@ function QueueSession() {
     };
   }, [isHost, sessionData?.deviceId]);
 
+  const updateCurrentTrack = async (track: TrackData) => {
+    try {
+      if (sessionId) {
+        await update(ref(db, `sessions/${sessionId}`), {
+          currentTrack: track,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to update current track:", error);
+    }
+  };
+
   // listens to when Spotify playback state changes,
   // and plays the next track
   useEffect(() => {
@@ -121,19 +128,25 @@ function QueueSession() {
           currEndingTrackUriRef.current = "";
         }
 
+        const currTrack = currState.item;
+        await updateCurrentTrack({
+          uri: currTrack.uri,
+          name: currTrack.name,
+          artist: currTrack.artists[0].name,
+          album: currTrack.album?.name,
+          albumCoverUrl: currTrack.album?.images?.[0]?.url,
+          isrc: currTrack.external_ids.isrc,
+        } as TrackData);
+
         if (
           currState?.progress_ms >= currState?.item?.duration_ms - buffer &&
           currEndingTrackUriRef.current !== currState.item.uri
         ) {
           currEndingTrackUriRef.current = currState.item.uri;
 
-          const resTrack = await playNextTrack({
+          await playNextTrack({
             sessionId: sessionId,
           });
-
-          if (resTrack && resTrack.data.playedTrackData) {
-            await updateCurrentTrack(resTrack.data.playedTrackData);
-          }
 
           if (!currState.is_playing) {
             changePlaybackState({ sessionId: sessionId, play: true });
@@ -296,18 +309,6 @@ function QueueSession() {
     }
 
     setIsLoading(false);
-  };
-
-  const updateCurrentTrack = async (track: TrackData) => {
-    try {
-      if (sessionId) {
-        await update(ref(db, `sessions/${sessionId}`), {
-          currentTrack: track,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to update current track:", error);
-    }
   };
 
   const containerCSS =

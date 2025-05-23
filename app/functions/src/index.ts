@@ -26,4 +26,3 @@ export const addTrackToQueue = queue.addTrackToQueue;
 export const voteForTrack = queue.voteForTrack;
 export const playNextTrack = queue.playNextTrack;
 export const changePlaybackState = queue.changePlaybackState;
-export const skipCurrentTrack = queue.skipCurrentTrack;
