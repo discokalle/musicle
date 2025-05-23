@@ -1,9 +1,11 @@
 import Button from "../components/Button";
-import { TrackData } from "../types";
+import { TrackData, Question } from "../types";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../firebase";
+import { getInfoByISRC } from "../song-info";
+import { generateQuestions } from "../question-generator";
 
 const getQuizState = httpsCallable<
   { quizId: string },
@@ -25,6 +27,11 @@ const setParticipantIsrc = httpsCallable<
   { success: boolean }
 >(functions, "setParticipantIsrc");
 
+const storeQuestions = httpsCallable<
+  { quizId: string; userId: string; questions: Question[] },
+  { success: boolean }
+>(functions, "storeQuestions");
+
 const getTopTracks = httpsCallable<
   { userId: string; timeRange: string },
   { topTracks: TrackData[] }
@@ -39,6 +46,129 @@ function QuizSession() {
     Record<string, string[]>
   >({});
   const [numSongsPerParticipant, setNumSongsPerParticipant] = useState(4);
+  const [initialized, setInitialized] = useState(false);
+  const [questionsMap, setQuestionsMap] = useState<Record<string, Question[]>>(
+    {}
+  );
+
+  useEffect(() => {
+    if (!quizId || started || initialized) return;
+
+    const initialize = async () => {
+      try {
+        const res = await getQuizState({ quizId });
+        const currentParticipants = res.data.participants;
+        const isrcMap = res.data.isrcs || {};
+        setParticipants(currentParticipants);
+
+        const missing = currentParticipants.filter((uid) => !isrcMap[uid]);
+
+        if (missing.length > 0) {
+          await Promise.all(
+            missing.map(async (userId) => {
+              try {
+                const topTracksRes = await getTopTracks({
+                  userId,
+                  timeRange: "medium_term",
+                });
+                const tracks = topTracksRes.data.topTracks;
+                if (tracks.length === 0) {
+                  await setParticipantIsrc({
+                    quizId,
+                    userId,
+                    isrcs: ["No tracks"],
+                  });
+                } else {
+                  const randomTracks = tracks
+                    .sort(() => 0.5 - Math.random())
+                    .slice(0, 5);
+                  const isrcs = randomTracks.map((t) => t.isrc || "No ISRC");
+                  await setParticipantIsrc({ quizId, userId, isrcs });
+                }
+              } catch {
+                await setParticipantIsrc({
+                  quizId,
+                  userId,
+                  isrcs: ["Error fetching tracks"],
+                });
+              }
+            })
+          );
+        }
+
+        setInitialized(true);
+      } catch (e) {
+        console.error("Initialization failed:", e);
+      }
+    };
+
+    initialize();
+  }, [quizId, started, initialized]);
+
+  useEffect(() => {
+    if (!quizId || !started) return;
+
+    const fetchIsrcs = async () => {
+      try {
+        const res = await getQuizState({ quizId });
+        const p = res.data.participants;
+        const isrcMap = res.data.isrcs || {};
+        setParticipants(p);
+
+        const trimmedMap: Record<string, string[]> = {};
+        for (const [uid, isrcs] of Object.entries(isrcMap)) {
+          trimmedMap[uid] = isrcs.slice(0, numSongsPerParticipant);
+        }
+
+        setParticipantIsrcMap(trimmedMap);
+      } catch (e) {
+        console.error("Failed to fetch ISRCs:", e);
+      }
+    };
+
+    fetchIsrcs();
+  }, [quizId, started, numSongsPerParticipant]);
+
+  useEffect(() => {
+    if (!started || !quizId) return;
+
+    const loadQuestions = async () => {
+      const newQuestionsMap: Record<string, Question[]> = {};
+
+      for (const [userId, isrcs] of Object.entries(participantIsrcMap)) {
+        const userQuestions: Question[] = [];
+
+        for (const isrc of isrcs) {
+          try {
+            const song = await getInfoByISRC(isrc);
+            if (!song) continue;
+
+            const allQuestions = generateQuestions(song);
+            if (allQuestions.length > 0) {
+              const randomIndex = Math.floor(
+                Math.random() * allQuestions.length
+              );
+              userQuestions.push(allQuestions[randomIndex]);
+            }
+          } catch {
+            // ignore error
+          }
+        }
+
+        newQuestionsMap[userId] = userQuestions;
+
+        try {
+          await storeQuestions({ quizId, userId, questions: userQuestions });
+        } catch (e) {
+          console.error(`Failed to store questions for ${userId}:`, e);
+        }
+      }
+
+      setQuestionsMap(newQuestionsMap);
+    };
+
+    loadQuestions();
+  }, [participantIsrcMap, started, quizId]);
 
   useEffect(() => {
     if (!quizId || started) return;
@@ -55,55 +185,6 @@ function QuizSession() {
 
     return () => clearInterval(interval);
   }, [quizId, started]);
-
-  useEffect(() => {
-    if (!quizId || !started) return;
-
-    const fetchIsrcs = async () => {
-      try {
-        const res = await getQuizState({ quizId });
-        const p = res.data.participants;
-        const isrcMap = res.data.isrcs || {};
-        setParticipants(p);
-
-        const missing = p.filter((uid) => !isrcMap[uid]);
-
-        if (missing.length > 0) {
-          const entries = await Promise.all(
-            missing.map(async (userId) => {
-              try {
-                const topTracksRes = await getTopTracks({
-                  userId,
-                  timeRange: "medium_term",
-                });
-                const tracks = topTracksRes.data.topTracks;
-                if (tracks.length === 0) return [userId, ["No tracks"]];
-
-                const randomTracks = tracks
-                  .sort(() => 0.5 - Math.random())
-                  .slice(0, numSongsPerParticipant);
-                const isrcs = randomTracks.map((t) => t.isrc || "No ISRC");
-
-                await setParticipantIsrc({ quizId, userId, isrcs });
-
-                return [userId, isrcs];
-              } catch {
-                return [userId, ["Error fetching tracks"]];
-              }
-            })
-          );
-          const newEntries = Object.fromEntries(entries);
-          setParticipantIsrcMap({ ...isrcMap, ...newEntries });
-        } else {
-          setParticipantIsrcMap(isrcMap);
-        }
-      } catch (e) {
-        console.error("Failed to fetch ISRCs:", e);
-      }
-    };
-
-    fetchIsrcs();
-  }, [quizId, started, numSongsPerParticipant]);
 
   const handleStartQuiz = async () => {
     if (!quizId) return;
@@ -172,15 +253,24 @@ function QuizSession() {
           <h1 className="text-3xl text-neutral">Quiz ID: {quizId}</h1>
           <ul className="text-neutral mt-4">
             {participants.map((uid) => (
-              <li key={uid}>
-                {uid} - ISRCs:
-                <ul className="ml-4">
-                  {(participantIsrcMap[uid] || ["Loading..."]).map(
-                    (isrc, i) => (
-                      <li key={i}>{isrc}</li>
-                    )
-                  )}
-                </ul>
+              <li key={uid} className="mb-4">
+                <div>{uid} - Questions:</div>
+                {!questionsMap[uid] || questionsMap[uid].length === 0 ? (
+                  <div className="italic text-neutral">
+                    Loading or no questions
+                  </div>
+                ) : (
+                  questionsMap[uid].map((q, index) => (
+                    <div key={index} className="mb-4">
+                      <div className="font-semibold">{q.question}</div>
+                      <ul className="ml-4 list-disc">
+                        {q.options.map((opt, i) => (
+                          <li key={i}>{opt}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))
+                )}
               </li>
             ))}
           </ul>

@@ -8,8 +8,49 @@ export type SongInfo = {
   artistBeginYear?: string;
 };
 
+const FALLBACK_ISRCS = [
+  //For spotify songs that are uploaded by small artists themselves
+  "USUG11904206",
+  "GBAHS1600463",
+  "DEUM71807062",
+  "USSM12200612",
+  "USSM11300080",
+  "GBUM72000433",
+  "GBN9Y1100088",
+  "USSM17700373",
+  "GBAYE0601696",
+  "USUG11500737",
+];
+
 //ISRC codes seem to be universal across services for recordings.
+
+//Track which fallback ISRCs have already been used
+const usedFallbacks = new Set<string>();
+
+function getRandomUnusedFallback(): string | null {
+  const unused = FALLBACK_ISRCS.filter((isrc) => !usedFallbacks.has(isrc));
+  if (unused.length === 0) return null;
+
+  const random = unused[Math.floor(Math.random() * unused.length)];
+  usedFallbacks.add(random);
+  return random;
+}
+
 export async function getInfoByISRC(isrc: string): Promise<SongInfo | null> {
+  const songInfo = await tryFetchISRCInfo(isrc);
+  if (songInfo) return songInfo;
+
+  //If the original ISRC failed, try one random fallback ISRC that hasn't been used
+  const fallback = getRandomUnusedFallback();
+  if (!fallback) return null;
+
+  const fallbackInfo = await tryFetchISRCInfo(fallback);
+  if (fallbackInfo) return fallbackInfo;
+
+  return null;
+}
+
+async function tryFetchISRCInfo(isrc: string): Promise<SongInfo | null> {
   const res = await fetch(
     `https://musicbrainz.org/ws/2/recording?query=isrc:${isrc}&fmt=json`
   );

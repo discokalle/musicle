@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Question } from "../types";
 import { getInfoByISRC } from "../song-info";
-import QuizCard, { Question } from "../components/QuizCard";
+import QuizCard from "../components/QuizCard";
 import { generateQuestions } from "../question-generator";
 
 //ISRC codes seem to be universal across services for recordings.

@@ -17,7 +17,6 @@ export const createQuiz = onCall(async (req: CallableRequest) => {
   }
 
   const hostUserId = req.auth.uid;
-  //const questions = req.data;
 
   try {
     const quizRef = db.ref("quizzes").push();
@@ -30,7 +29,6 @@ export const createQuiz = onCall(async (req: CallableRequest) => {
       participants: { [hostUserId]: true },
       createdAt: Date.now(),
       started: false,
-      //questions,
     };
 
     await quizRef.set(newQuiz);
@@ -152,7 +150,6 @@ export const endQuiz = onCall(
 );
 
 export const getQuizState = onCall(
-  //participants and started.
   async (req: CallableRequest<{ quizId: string }>) => {
     if (!req.auth) {
       throw new HttpsError("unauthenticated", "Authentication required.");
@@ -179,6 +176,7 @@ export const getQuizState = onCall(
         participants: participantIds,
         started: quizData.started ?? false,
         isrcs: quizData.isrcs ?? {},
+        questions: quizData.questions ?? {},
       };
     } catch (e: any) {
       throw new HttpsError(
@@ -219,6 +217,43 @@ export const setParticipantIsrc = onCall(
       return { success: true };
     } catch (e: any) {
       throw new HttpsError("internal", "Failed to store ISRC.", e.message);
+    }
+  }
+);
+
+export const storeQuestions = onCall(
+  async (
+    req: CallableRequest<{
+      quizId: string;
+      userId: string;
+      questions: Question[];
+    }>
+  ) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const { quizId, userId, questions } = req.data;
+
+    if (!quizId || !userId || !Array.isArray(questions)) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing quizId, userId, or valid questions array."
+      );
+    }
+
+    const quizRef = db.ref(`quizzes/${quizId}`);
+    const snapshot = await quizRef.once("value");
+
+    if (!snapshot.exists()) {
+      throw new HttpsError("not-found", "Quiz not found.");
+    }
+
+    try {
+      await quizRef.child(`questions/${userId}`).set(questions);
+      return { success: true };
+    } catch (e: any) {
+      throw new HttpsError("internal", "Failed to store questions.", e.message);
     }
   }
 );
