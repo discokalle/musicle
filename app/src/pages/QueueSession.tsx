@@ -30,6 +30,16 @@ const setSpotifyDevice = httpsCallable<
   { success: boolean; message: string }
 >(functions, "setSpotifyDevice");
 
+const changePlaybackState = httpsCallable<
+  { sessionId: string; play: boolean },
+  { success: boolean; message: string }
+>(functions, "changePlaybackState");
+
+// const skipCurrentTrack = httpsCallable<
+//   { sessionId: string },
+//   { success: boolean; message: string }
+// >(functions, "skipCurrentTrack;");
+
 const getSpotifyPlaybackState = httpsCallable<
   undefined,
   { playbackState: any }
@@ -115,11 +125,6 @@ function QueueSession() {
           currState?.progress_ms >= currState?.item?.duration_ms - buffer &&
           currEndingTrackUriRef.current !== currState.item.uri
         ) {
-          // this logic might need to be changed later (it works fine
-          // as long as the songs just play until the end, which will
-          // then queue; furthermore, it requires that the host does not
-          // enqueue things from Spotify itself)
-
           currEndingTrackUriRef.current = currState.item.uri;
 
           const resTrack = await playNextTrack({
@@ -128,6 +133,10 @@ function QueueSession() {
 
           if (resTrack && resTrack.data.playedTrackData) {
             await updateCurrentTrack(resTrack.data.playedTrackData);
+          }
+
+          if (!currState.is_playing) {
+            changePlaybackState({ sessionId: sessionId, play: true });
           }
         }
       } catch (e: any) {
@@ -172,9 +181,6 @@ function QueueSession() {
           const data = snapshot.val() as SessionData;
           setSessionData(data);
           setError("");
-
-          // console.log(sessionData);
-
           setIsHost(data.hostUserId === auth.currentUser?.uid);
 
           if (data.isEnded) {
@@ -245,7 +251,6 @@ function QueueSession() {
 
   const searchBarMatchLogic = async (recTrackData: TrackData) => {
     try {
-      // console.log(recTrackData);
       await addTrackToQueue({ sessionId, trackData: recTrackData });
     } catch (e: any) {
       console.log(`An error occurred during the match logic: ${e.message}`);
@@ -285,6 +290,7 @@ function QueueSession() {
         deviceId: id,
         deviceName: name,
       });
+      await changePlaybackState({ sessionId: sessionId, play: false });
     } catch (e: any) {
       console.log(e.message);
     }
