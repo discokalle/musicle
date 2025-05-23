@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { off, onValue, ref, set, update } from "firebase/database";
 import { httpsCallable } from "firebase/functions";
 import clsx from "clsx";
@@ -29,11 +29,6 @@ const setSpotifyDevice = httpsCallable<
   { sessionId: string; deviceId: string; deviceName: string },
   { success: boolean; message: string }
 >(functions, "setSpotifyDevice");
-
-const changePlaybackState = httpsCallable<
-  { sessionId: string; play: boolean },
-  { success: boolean; message: string }
->(functions, "changePlaybackState");
 
 const getSpotifyPlaybackState = httpsCallable<
   undefined,
@@ -67,6 +62,8 @@ function QueueSession() {
   const hasNavigatedRef = useRef(false);
   // used to avoid enqueueing more than one song when a certain song is ending
   const currEndingTrackUriRef = useRef<string>("");
+  // used to override Spotify's auto-play when a new song has been enqueued in the app
+  const lastPlayedByAppUriRef = useRef<string | null>(null);
   const { sessionId } = useParams<{ sessionId: string }>();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [activeSpotifyDevices, setActiveSpotifyDevices] = useState<any[]>([]);
@@ -97,17 +94,23 @@ function QueueSession() {
     };
   }, [isHost, sessionData?.deviceId]);
 
-  const updateCurrentTrack = async (track: TrackData) => {
-    try {
-      if (sessionId) {
-        await update(ref(db, `sessions/${sessionId}`), {
-          currentTrack: track,
-        });
+  // useCallback memoizes the function so that it is not re-rendered
+  // unless its dependency is changed (i.e., the sessionId);
+  // thus, the effect below can use the function as a stable dependency
+  const updateCurrentTrack = useCallback(
+    async (track: TrackData) => {
+      try {
+        if (sessionId) {
+          await update(ref(db, `sessions/${sessionId}`), {
+            currentTrack: track,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update current track:", error);
       }
-    } catch (error) {
-      console.error("Failed to update current track:", error);
-    }
-  };
+    },
+    [sessionId]
+  );
 
   // listens to when Spotify playback state changes,
   // and plays the next track
@@ -124,9 +127,7 @@ function QueueSession() {
         const resPlayback = await getSpotifyPlaybackState();
         const currState = resPlayback.data.playbackState;
 
-        if (currState.item.uri !== currEndingTrackUriRef.current) {
-          currEndingTrackUriRef.current = "";
-        }
+        if (!currState || !currState.item) return;
 
         const currTrack = currState.item;
         await updateCurrentTrack({
@@ -138,19 +139,34 @@ function QueueSession() {
           isrc: currTrack.external_ids.isrc,
         } as TrackData);
 
+        if (currState.item.uri !== currEndingTrackUriRef.current) {
+          currEndingTrackUriRef.current = "";
+        }
+
+        console.log(
+          "lastplayed",
+          lastPlayedByAppUriRef,
+          "currState",
+          currState.item.uri,
+          "queue",
+          sessionData?.queue
+        );
+
         if (
-          currState?.progress_ms >= currState?.item?.duration_ms - buffer &&
+          (((!lastPlayedByAppUriRef.current ||
+            currState.item.uri !== lastPlayedByAppUriRef.current) &&
+            sessionData?.queue &&
+            Object.keys(sessionData.queue).length > 0) ||
+            currState?.progress_ms >= currState?.item?.duration_ms - buffer) &&
           currEndingTrackUriRef.current !== currState.item.uri
         ) {
           currEndingTrackUriRef.current = currState.item.uri;
 
-          await playNextTrack({
+          const resTrack = await playNextTrack({
             sessionId: sessionId,
           });
 
-          if (!currState.is_playing) {
-            changePlaybackState({ sessionId: sessionId, play: true });
-          }
+          lastPlayedByAppUriRef.current = resTrack.data.playedTrackData.uri;
         }
       } catch (e: any) {
         console.log(e.message);
@@ -166,7 +182,13 @@ function QueueSession() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isHost, sessionData?.deviceId, sessionId]);
+  }, [
+    isHost,
+    sessionData?.deviceId,
+    sessionData?.queue,
+    sessionId,
+    updateCurrentTrack,
+  ]);
 
   // listens for changes to the session in RTDB and
   // updates the sessionData state accordingly
@@ -273,6 +295,7 @@ function QueueSession() {
   const searchBarRenderRec = (rec: TrackData, onClickLogic: () => void) => {
     return (
       <TrackListItem
+        key={rec.uri}
         track={rec}
         onClickLogic={onClickLogic}
         includeAlbumName={false}
@@ -303,7 +326,6 @@ function QueueSession() {
         deviceId: id,
         deviceName: name,
       });
-      await changePlaybackState({ sessionId: sessionId, play: false });
     } catch (e: any) {
       console.log(e.message);
     }
@@ -315,7 +337,6 @@ function QueueSession() {
     "absolute w-[75%] flex flex-col gap-7 items-center left-1/2 top-1/6\
      transform -translate-x-1/2 bg-secondary py-6 px-10 rounded-md";
 
-  // console.log(activeSpotifyDevices);
   if (!sessionData.deviceId) {
     return (
       <div className={containerCSS}>
