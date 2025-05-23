@@ -8,6 +8,8 @@ import clsx from "clsx";
 
 import { db } from "../firebase";
 
+import LoadingAnimation from "../components/LoadingAnimation";
+
 import { linkHighlightCSS, panelCardCSS } from "../styles";
 
 type ProfileContext = { userSnapshot: DataSnapshot };
@@ -54,7 +56,9 @@ function Following() {
     fetchFollowing();
   }, [userSnapshot]);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) {
+    return <LoadingAnimation></LoadingAnimation>;
+  }
 
   if (error.trim() !== "") return <div>Error: {error}</div>;
 

@@ -1,4 +1,5 @@
 import Button from "../components/Button";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
@@ -21,7 +22,7 @@ function Welcome() {
   }, [auth]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   return (

@@ -1,5 +1,6 @@
 import Button from "../components/Button";
 import ProfileBanner from "../components/ProfileBanner";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import spotifyLogo from "../assets/spotify-logo-cartoon.png";
 
@@ -60,7 +61,7 @@ function ProfileLayout() {
   }, [username]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   if (error || !userSnapshot) {

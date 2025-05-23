@@ -11,6 +11,7 @@ import supermanLogo from "./assets/superman-logo.png";
 
 // components
 import NavBar from "./components/NavBar";
+import LoadingAnimation from "./components/LoadingAnimation";
 
 // pages
 import Welcome from "./pages/Welcome";
@@ -56,8 +57,7 @@ function App() {
   }, []);
 
   if (isLoading) {
-    // replace w/ proper loading animation later
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   return (

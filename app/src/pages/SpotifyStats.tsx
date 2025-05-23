@@ -1,4 +1,5 @@
 import TrackListItem from "../components/TrackListItem";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import { useEffect, useState } from "react";
 import { httpsCallable } from "firebase/functions";
@@ -54,7 +55,7 @@ function SpotifyStats() {
   }, [userSnapshot]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   if (userSnapshot?.val().spotify === undefined) {

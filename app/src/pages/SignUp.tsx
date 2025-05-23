@@ -11,6 +11,7 @@ import clsx from "clsx";
 import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import { centerContainerCSS, titleCSS } from "../styles";
 
@@ -19,9 +20,11 @@ function SignUp() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async () => {
     try {
+      setIsLoading(true);
       if (username.length > 12) {
         throw new Error("Username can at most be 12 characters long.");
       }
@@ -29,6 +32,7 @@ function SignUp() {
       const snapshot = await get(ref(db, `usernames/${username}`));
       if (snapshot.exists()) {
         alert("Username is already taken. Please try again.");
+        setIsLoading(false);
         return;
       }
 
@@ -47,6 +51,7 @@ function SignUp() {
       });
       await updateProfile(userCred.user, { displayName: username });
 
+      setIsLoading(false);
       navigate("/home");
     } catch (e: any) {
       if (e.code == AuthErrorCodes.INVALID_EMAIL) {
@@ -56,6 +61,7 @@ function SignUp() {
       } else {
         alert(`Error: ${e.message}`);
       }
+      setIsLoading(false);
     }
   };
 
@@ -66,6 +72,10 @@ function SignUp() {
       handleSignUp();
     }
   };
+
+  if (isLoading) {
+    return <LoadingAnimation></LoadingAnimation>;
+  }
 
   const inputCSS =
     "text-neutral w-[90%] mx-auto p-2 border border-gray-300 rounded-md\
