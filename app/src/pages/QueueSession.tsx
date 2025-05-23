@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { off, onValue, ref, set, update } from "firebase/database";
 import { httpsCallable } from "firebase/functions";
 import clsx from "clsx";
@@ -62,6 +62,8 @@ function QueueSession() {
   const hasNavigatedRef = useRef(false);
   // used to avoid enqueueing more than one song when a certain song is ending
   const currEndingTrackUriRef = useRef<string>("");
+  // used to override Spotify's auto-play when a new song has been enqueued in the app
+  const lastPlayedByAppUriRef = useRef<string | null>(null);
   const { sessionId } = useParams<{ sessionId: string }>();
   const [sessionData, setSessionData] = useState<SessionData | null>(null);
   const [activeSpotifyDevices, setActiveSpotifyDevices] = useState<any[]>([]);
@@ -92,6 +94,24 @@ function QueueSession() {
     };
   }, [isHost, sessionData?.deviceId]);
 
+  // useCallback memoizes the function so that it is not re-rendered
+  // unless its dependency is changed (i.e., the sessionId);
+  // thus, the effect below can use the function as a stable dependency
+  const updateCurrentTrack = useCallback(
+    async (track: TrackData) => {
+      try {
+        if (sessionId) {
+          await update(ref(db, `sessions/${sessionId}`), {
+            currentTrack: track,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to update current track:", error);
+      }
+    },
+    [sessionId]
+  );
+
   // listens to when Spotify playback state changes,
   // and plays the next track
   useEffect(() => {
@@ -107,28 +127,46 @@ function QueueSession() {
         const resPlayback = await getSpotifyPlaybackState();
         const currState = resPlayback.data.playbackState;
 
+        if (!currState || !currState.item) return;
+
+        const currTrack = currState.item;
+        await updateCurrentTrack({
+          uri: currTrack.uri,
+          name: currTrack.name,
+          artist: currTrack.artists[0].name,
+          album: currTrack.album?.name,
+          albumCoverUrl: currTrack.album?.images?.[0]?.url,
+          isrc: currTrack.external_ids.isrc,
+        } as TrackData);
+
         if (currState.item.uri !== currEndingTrackUriRef.current) {
           currEndingTrackUriRef.current = "";
         }
 
+        console.log(
+          "lastplayed",
+          lastPlayedByAppUriRef,
+          "currState",
+          currState.item.uri,
+          "queue",
+          sessionData?.queue
+        );
+
         if (
-          currState?.progress_ms >= currState?.item?.duration_ms - buffer &&
+          (((!lastPlayedByAppUriRef.current ||
+            currState.item.uri !== lastPlayedByAppUriRef.current) &&
+            sessionData?.queue &&
+            Object.keys(sessionData.queue).length > 0) ||
+            currState?.progress_ms >= currState?.item?.duration_ms - buffer) &&
           currEndingTrackUriRef.current !== currState.item.uri
         ) {
-          // this logic might need to be changed later (it works fine
-          // as long as the songs just play until the end, which will
-          // then queue; furthermore, it requires that the host does not
-          // enqueue things from Spotify itself)
-
           currEndingTrackUriRef.current = currState.item.uri;
 
           const resTrack = await playNextTrack({
             sessionId: sessionId,
           });
 
-          if (resTrack && resTrack.data.playedTrackData) {
-            await updateCurrentTrack(resTrack.data.playedTrackData);
-          }
+          lastPlayedByAppUriRef.current = resTrack.data.playedTrackData.uri;
         }
       } catch (e: any) {
         console.log(e.message);
@@ -144,7 +182,13 @@ function QueueSession() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isHost, sessionData?.deviceId, sessionId]);
+  }, [
+    isHost,
+    sessionData?.deviceId,
+    sessionData?.queue,
+    sessionId,
+    updateCurrentTrack,
+  ]);
 
   // listens for changes to the session in RTDB and
   // updates the sessionData state accordingly
@@ -172,9 +216,6 @@ function QueueSession() {
           const data = snapshot.val() as SessionData;
           setSessionData(data);
           setError("");
-
-          // console.log(sessionData);
-
           setIsHost(data.hostUserId === auth.currentUser?.uid);
 
           if (data.isEnded) {
@@ -245,7 +286,6 @@ function QueueSession() {
 
   const searchBarMatchLogic = async (recTrackData: TrackData) => {
     try {
-      // console.log(recTrackData);
       await addTrackToQueue({ sessionId, trackData: recTrackData });
     } catch (e: any) {
       console.log(`An error occurred during the match logic: ${e.message}`);
@@ -255,6 +295,7 @@ function QueueSession() {
   const searchBarRenderRec = (rec: TrackData, onClickLogic: () => void) => {
     return (
       <TrackListItem
+        key={rec.uri}
         track={rec}
         onClickLogic={onClickLogic}
         includeAlbumName={false}
@@ -292,23 +333,10 @@ function QueueSession() {
     setIsLoading(false);
   };
 
-  const updateCurrentTrack = async (track: TrackData) => {
-    try {
-      if (sessionId) {
-        await update(ref(db, `sessions/${sessionId}`), {
-          currentTrack: track,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to update current track:", error);
-    }
-  };
-
   const containerCSS =
     "absolute w-[75%] flex flex-col gap-7 items-center left-1/2 top-1/6\
      transform -translate-x-1/2 bg-secondary py-6 px-10 rounded-md";
 
-  // console.log(activeSpotifyDevices);
   if (!sessionData.deviceId) {
     return (
       <div className={containerCSS}>
