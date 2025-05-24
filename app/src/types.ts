@@ -41,5 +41,6 @@ export type QuizSessionData = {
   createdAt: number;
   started: boolean;
   isrcs?: Record<string, string[]>;
-  //questions?: Record<string, Question[]>;
+  questions?: Question[];
+  isGeneratingQuestions?: boolean;
 };

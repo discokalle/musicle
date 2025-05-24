@@ -29,6 +29,7 @@ export const createQuiz = onCall(async (req: CallableRequest) => {
       participants: { [hostUserId]: true },
       createdAt: Date.now(),
       started: false,
+      isGeneratingQuestions: false,
     };
 
     await quizRef.set(newQuiz);
@@ -172,11 +173,17 @@ export const getQuizState = onCall(
         ? Object.keys(quizData.participants)
         : [];
 
+      const questionsArray: Question[] = quizData.questions
+        ? Object.values(quizData.questions)
+        : [];
+
       return {
         participants: participantIds,
         started: quizData.started ?? false,
         isrcs: quizData.isrcs ?? {},
-        questions: quizData.questions ?? {},
+        questions: questionsArray,
+        hostUserId: quizData.hostUserId,
+        isGeneratingQuestions: quizData.isGeneratingQuestions ?? false,
       };
     } catch (e: any) {
       throw new HttpsError(
@@ -221,24 +228,19 @@ export const setParticipantIsrc = onCall(
   }
 );
 
-export const storeQuestions = onCall(
-  async (
-    req: CallableRequest<{
-      quizId: string;
-      userId: string;
-      questions: Question[];
-    }>
-  ) => {
+export const storeQuizQuestions = onCall(
+  async (req: CallableRequest<{ quizId: string; questions: Question[] }>) => {
     if (!req.auth) {
       throw new HttpsError("unauthenticated", "Authentication required.");
     }
 
-    const { quizId, userId, questions } = req.data;
+    const userId = req.auth.uid;
+    const { quizId, questions } = req.data;
 
-    if (!quizId || !userId || !Array.isArray(questions)) {
+    if (!quizId || !Array.isArray(questions)) {
       throw new HttpsError(
         "invalid-argument",
-        "Missing quizId, userId, or valid questions array."
+        "Missing quizId or valid questions array."
       );
     }
 
@@ -249,11 +251,69 @@ export const storeQuestions = onCall(
       throw new HttpsError("not-found", "Quiz not found.");
     }
 
+    const quizData = snapshot.val();
+
+    if (quizData.hostUserId !== userId) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only the host can store quiz questions."
+      );
+    }
+
     try {
-      await quizRef.child(`questions/${userId}`).set(questions);
+      await quizRef.child(`questions`).set(questions);
       return { success: true };
     } catch (e: any) {
-      throw new HttpsError("internal", "Failed to store questions.", e.message);
+      throw new HttpsError(
+        "internal",
+        "Failed to store quiz questions.",
+        e.message
+      );
+    }
+  }
+);
+
+export const setGeneratingQuestionsStatus = onCall(
+  async (req: CallableRequest<{ quizId: string; status: boolean }>) => {
+    if (!req.auth) {
+      throw new HttpsError("unauthenticated", "Authentication required.");
+    }
+
+    const userId = req.auth.uid;
+    const { quizId, status } = req.data;
+
+    if (!quizId || typeof status !== "boolean") {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing quizId or invalid status."
+      );
+    }
+
+    const quizRef = db.ref(`quizzes/${quizId}`);
+    const snapshot = await quizRef.once("value");
+
+    if (!snapshot.exists()) {
+      throw new HttpsError("not-found", "Quiz not found.");
+    }
+
+    const quizData = snapshot.val();
+
+    if (quizData.hostUserId !== userId) {
+      throw new HttpsError(
+        "permission-denied",
+        "Only the host can set the question generation status."
+      );
+    }
+
+    try {
+      await quizRef.update({ isGeneratingQuestions: status });
+      return { success: true };
+    } catch (e: any) {
+      throw new HttpsError(
+        "internal",
+        "Failed to set generating questions status.",
+        e.message
+      );
     }
   }
 );

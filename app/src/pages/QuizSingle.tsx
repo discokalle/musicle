@@ -94,7 +94,7 @@ function QuizSingle() {
         isLockedIn={isLockedIn}
         onSelect={handleSelect}
         onLockIn={handleLockIn}
-        onNext={handleNext} // <-- passing continue logic here
+        onNext={handleNext}
         score={score}
         totalQuestions={questions.length}
         questionNumber={questionNumber}
