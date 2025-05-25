@@ -15,6 +15,7 @@ import * as queue from "./queue";
 export const exchangeSpotifyCode = spotify.exchangeSpotifyCode;
 
 export const getTopTracks = stats.getTopTracks;
+export const getTopArtists = stats.getTopArtists;
 
 export const getActiveSpotifyDevices = queue.getActiveSpotifyDevices;
 export const setSpotifyDevice = queue.setSpotifyDevice;
