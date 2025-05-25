@@ -1,16 +1,5 @@
 # Ideas
 
-## To-do:
-
-- Fix random samples for quiz
-- Fix single player (w/ same sampling logic)
-- Add stats for quiz
-  - Quizzes played
-  - Quizzes hosted
-  - Quizzes won
-  - Accuracy
-- Logo (change favicon and top left logo in navbar; delete unused assets/images)
-
 ## API resources
 
 - General API collections
