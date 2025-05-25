@@ -7,6 +7,8 @@ import {
 import { callSpotifyApi } from "./spotify";
 import { ArtistData, TrackData } from "../../src/types";
 
+import { spotifyClientSecretVar } from "./config";
+
 /**
  * time_range:
  * Over what time frame the affinities are computed.
@@ -18,6 +20,7 @@ import { ArtistData, TrackData } from "../../src/types";
  * Default: medium_term
  */
 export const getTopTracks = onCall(
+  { secrets: [spotifyClientSecretVar] },
   async (req: CallableRequest<{ userId: string; timeRange: string }>) => {
     const { userId, timeRange } = req.data;
 
@@ -62,6 +65,7 @@ export const getTopTracks = onCall(
 );
 
 export const getTopArtists = onCall(
+  { secrets: [spotifyClientSecretVar] },
   async (req: CallableRequest<{ userId: string; timeRange: string }>) => {
     const { userId, timeRange } = req.data;
 

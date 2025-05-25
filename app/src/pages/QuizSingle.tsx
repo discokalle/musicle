@@ -3,6 +3,7 @@ import { Question } from "../types";
 import { getInfoByISRC } from "../song-info";
 import QuizCard from "../components/QuizCard";
 import { generateQuestions } from "../question-generator";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 //ISRC codes seem to be universal across services for recordings.
 const ISRCs = [
@@ -23,7 +24,7 @@ function shuffle(array: Question[]): Question[] {
 
 function QuizSingle() {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [questionNumber, setQuestionNumber] = useState(1);
   const [selectedOption, setSelectedOption] = useState<string>();
@@ -42,7 +43,7 @@ function QuizSingle() {
         }
       }
       setQuestions(shuffle(finalQuestions));
-      setLoading(false);
+      setIsLoading(false);
     }
     loadQuestions();
   }, []);
@@ -68,10 +69,10 @@ function QuizSingle() {
   const centerCSS =
     "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2";
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className={centerCSS}>
-        <p className="text-neutral">Loading...</p>
+        <LoadingAnimation></LoadingAnimation>
       </div>
     );
   }

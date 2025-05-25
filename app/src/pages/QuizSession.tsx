@@ -7,6 +7,7 @@ import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "../firebase";
 import { getInfoByISRC } from "../song-info";
 import { generateQuestions } from "../question-generator";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 //Cloud state of the quiz
 const getQuizState = httpsCallable<
@@ -510,9 +511,7 @@ function QuizSession() {
   if (isGenerating) {
     return (
       <div className={centerCSS}>
-        <h1 className={headingPrimaryCSS}>
-          Generating questions, this may take a while...
-        </h1>
+        <LoadingAnimation message="Generating questions, this may take a while..."></LoadingAnimation>
       </div>
     );
   }

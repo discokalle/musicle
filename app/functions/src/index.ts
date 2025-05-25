@@ -4,9 +4,7 @@ import * as admin from "firebase-admin";
 // IMPORTANT: the following must be run before importing other firebase function files
 // ----
 admin.initializeApp();
-// import { spotifyClientSecretVar } from "./config";
-// setGlobalOptions({ region: "europe-west1", secrets: [spotifyClientSecretVar] });
-import "./config";
+// import "./config";
 setGlobalOptions({ region: "europe-west1" });
 // ----
 
@@ -29,6 +27,7 @@ export const searchSpotifyTracks = queue.searchSpotifyTracks;
 export const addTrackToQueue = queue.addTrackToQueue;
 export const voteForTrack = queue.voteForTrack;
 export const playNextTrack = queue.playNextTrack;
+
 export const createQuiz = quiz.createQuiz;
 export const joinQuiz = quiz.joinQuiz;
 export const startQuiz = quiz.startQuiz;

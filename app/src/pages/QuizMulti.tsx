@@ -7,6 +7,9 @@ import { auth, db, functions } from "../firebase";
 import { useEffect, useState } from "react";
 import { get, ref } from "firebase/database";
 
+import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
+import LoadingAnimation from "../components/LoadingAnimation";
+
 const createQuiz = httpsCallable<{}, { quizId: string }>(
   functions,
   "createQuiz"
@@ -88,27 +91,23 @@ function QuizMulti() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
-
-  const centerContainerCSS =
-    "absolute flex flex-col gap-7 items-center left-1/2 top-[40%] transform -translate-x-1/2";
-
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
 
   return (
     <div className={centerContainerCSS}>
       <h1 className={titleCSS}>
         This is <span className="italic text-accent font-bold">THE QUIZ!</span>
       </h1>
-      <p className="text-neutral text-xl">
-        Gather your friends and compete in quizzes!
-      </p>
+      <p className={subtitleCSS}>Gather your friends and compete in quizzes!</p>
 
       <div className="flex gap-10">
-        <Button onClick={handleCreateQuiz}>Create Quiz</Button>
-        <Button onClick={handleJoinQuiz}>Join Quiz</Button>
+        <Button onClick={handleCreateQuiz} size="large">
+          Create Quiz
+        </Button>
+        <Button onClick={handleJoinQuiz} size="large">
+          Join Quiz
+        </Button>
       </div>
     </div>
   );

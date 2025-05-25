@@ -1,4 +1,8 @@
-const LoadingAnimation = () => {
+type Props = {
+  message?: string;
+};
+
+const LoadingAnimation = ({ message = "Loading..." }: Props) => {
   const discColorCSS =
     "absolute inset-0 rounded-full bg-gradient-to-r from-blue-600\
      via-gray-300 to-blue-600 border-[4px] border-slate-300";
@@ -11,7 +15,7 @@ const LoadingAnimation = () => {
           <div className="w-3 h-3 rounded-full bg-white"></div>
         </div>
       </div>
-      <p className="mt-3 text-neutral">Loading...</p>
+      <p className="mt-3 text-neutral">{message}</p>
     </div>
   );
 };

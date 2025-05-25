@@ -17,6 +17,7 @@ const db = admin.database();
 /** ACCESS & REFRESH TOKEN EXCHANGE/UPDATE *****************************/
 
 export const exchangeSpotifyCode = onCall(
+  { secrets: [spotifyClientSecretVar] },
   async (req: CallableRequest<{ code: string }>) => {
     if (!req.auth) {
       throw new HttpsError(

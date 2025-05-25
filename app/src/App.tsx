@@ -28,14 +28,11 @@ import SpotifyStats from "./pages/SpotifyStats";
 
 import Queue from "./pages/Queue";
 import QueueSession from "./pages/QueueSession";
-import QuizLayout from "./pages/QuizLayout";
-import QuizSingle from "./pages/QuizSingle";
-import QuizMulti from "./pages/QuizMulti";
-import QuizSession from "./pages/QuizSession";
 
 import QuizLayout from "./pages/QuizLayout";
 import QuizSingle from "./pages/QuizSingle";
 import QuizMulti from "./pages/QuizMulti";
+import QuizSession from "./pages/QuizSession";
 
 function App() {
   const backgroundCSS = "bg-primary bg-center absolute w-full h-full";
@@ -86,11 +83,10 @@ function App() {
         <Route path="/spotify-callback" element={<SpotifyCallback />} />
         <Route path="/queue" element={<Queue />}></Route>
         <Route path="/queue/:sessionId" element={<QueueSession />}></Route>
-        <Route path="/quiz" element={<QuizLayout />}>
-          <Route path="single" element={<QuizSingle />} />
-          <Route path="multi" element={<QuizMulti />} />
-          <Route path="multi/:quizId" element={<QuizSession />} />
-        </Route>
+        <Route path="/quiz" element={<QuizLayout />} />
+        <Route path="/quiz/single" element={<QuizSingle />} />
+        <Route path="/quiz/multi" element={<QuizMulti />} />
+        <Route path="/quiz/multi/:quizId" element={<QuizSession />} />
       </Routes>
     </Router>
   );

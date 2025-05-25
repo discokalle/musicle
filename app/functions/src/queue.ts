@@ -8,45 +8,50 @@ import { callSpotifyApi } from "./spotify";
 
 import { TrackData, SessionData, QueueItemData } from "../../src/types";
 
+import { spotifyClientSecretVar } from "./config";
+
 const db = admin.database();
 
 /** SPOTIFY DEVICE SETUP *************************************************/
 
-export const getActiveSpotifyDevices = onCall(async (req: CallableRequest) => {
-  if (!req.auth) {
-    throw new HttpsError(
-      "unauthenticated",
-      "Authentication required to get Spotify devices."
-    );
-  }
-
-  const userId = req.auth.uid;
-
-  try {
-    const res = await callSpotifyApi({
-      endpoint: "/v1/me/player/devices",
-      method: "GET",
-      userId: userId,
-    });
-
-    if (!res || !res.devices) {
+export const getActiveSpotifyDevices = onCall(
+  { secrets: [spotifyClientSecretVar] },
+  async (req: CallableRequest) => {
+    if (!req.auth) {
       throw new HttpsError(
-        "internal",
-        "Failed to retrieve devices or devices list is empty."
+        "unauthenticated",
+        "Authentication required to get Spotify devices."
       );
     }
 
-    return { devices: res.devices };
-  } catch (e: any) {
-    if (e instanceof HttpsError) throw e;
+    const userId = req.auth.uid;
 
-    throw new HttpsError(
-      "internal",
-      "Failed to get Spotify devices.",
-      e.message
-    );
+    try {
+      const res = await callSpotifyApi({
+        endpoint: "/v1/me/player/devices",
+        method: "GET",
+        userId: userId,
+      });
+
+      if (!res || !res.devices) {
+        throw new HttpsError(
+          "internal",
+          "Failed to retrieve devices or devices list is empty."
+        );
+      }
+
+      return { devices: res.devices };
+    } catch (e: any) {
+      if (e instanceof HttpsError) throw e;
+
+      throw new HttpsError(
+        "internal",
+        "Failed to get Spotify devices.",
+        e.message
+      );
+    }
   }
-});
+);
 
 export const setSpotifyDevice = onCall(
   async (
@@ -206,6 +211,7 @@ export const joinSession = onCall(
 /** SEARCH, ENQUEUE & VOTE FOR TRACKS ***********************************/
 
 export const searchSpotifyTracks = onCall(
+  { secrets: [spotifyClientSecretVar] },
   async (req: CallableRequest<{ sessionId: string; query: string }>) => {
     if (!req.auth) {
       throw new HttpsError(
@@ -447,34 +453,38 @@ export const voteForTrack = onCall(
 
 /** PLAY NEXT TRACK IN QUEUE **************************************/
 
-export const getSpotifyPlaybackState = onCall(async (req: CallableRequest) => {
-  if (!req.auth) {
-    throw new HttpsError(
-      "unauthenticated",
-      "Authentication required to get playback state."
-    );
+export const getSpotifyPlaybackState = onCall(
+  { secrets: [spotifyClientSecretVar] },
+  async (req: CallableRequest) => {
+    if (!req.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Authentication required to get playback state."
+      );
+    }
+
+    const userId = req.auth.uid;
+
+    try {
+      const res = await callSpotifyApi({
+        endpoint: "/v1/me/player",
+        method: "GET",
+        userId: userId,
+      });
+
+      return { playbackState: res };
+    } catch (e: any) {
+      throw new HttpsError(
+        "internal",
+        "Failed to get playback state.",
+        e.message
+      );
+    }
   }
-
-  const userId = req.auth.uid;
-
-  try {
-    const res = await callSpotifyApi({
-      endpoint: "/v1/me/player",
-      method: "GET",
-      userId: userId,
-    });
-
-    return { playbackState: res };
-  } catch (e: any) {
-    throw new HttpsError(
-      "internal",
-      "Failed to get playback state.",
-      e.message
-    );
-  }
-});
+);
 
 export const playNextTrack = onCall(
+  { secrets: [spotifyClientSecretVar] },
   async (req: CallableRequest<{ sessionId: string }>) => {
     if (!req.auth) {
       throw new HttpsError(
