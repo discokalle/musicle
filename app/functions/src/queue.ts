@@ -131,6 +131,18 @@ export const createSession = onCall(async (req: CallableRequest) => {
     const sessionId = sessionRef.key;
 
     await db.ref(`users/${hostUserId}/hostingSessionId`).set(sessionId);
+    const numHostedRef = db.ref(
+      `users/${hostUserId}/gameStats/queue/numHostedSessions`
+    );
+    await numHostedRef.transaction((currCnt) => {
+      return (currCnt || 0) + 1;
+    });
+    const numParticipatedRef = db.ref(
+      `users/${hostUserId}/gameStats/queue/numParticipatedSessions`
+    );
+    await numParticipatedRef.transaction((currCnt) => {
+      return (currCnt || 0) + 1;
+    });
 
     await sessionRef.set({
       hostUserId: hostUserId,
@@ -174,6 +186,12 @@ export const joinSession = onCall(
       }
 
       await db.ref(`sessions/${sessionId}/participants/${userId}`).set(true);
+      const numParticipatedRef = db.ref(
+        `users/${userId}/gameStats/queue/numParticipatedSessions`
+      );
+      await numParticipatedRef.transaction((currCnt) => {
+        return (currCnt || 0) + 1;
+      });
 
       console.log(`User ${userId} joined session ${sessionId}`);
 
@@ -291,7 +309,6 @@ export const addTrackToQueue = onCall(
     const suggesterUid = req.auth.uid;
 
     const { sessionId, trackData } = req.data;
-    // console.log(sessionId, trackData);
 
     if (!sessionId || typeof sessionId !== "string") {
       throw new HttpsError("invalid-argument", "Missing or invalid sessionId.");
@@ -331,6 +348,13 @@ export const addTrackToQueue = onCall(
         // addedAt: admin.database.ServerValue.TIMESTAMP,
         addedAt: Date.now(),
       } as QueueItemData);
+
+      const numEnqueuedRef = db.ref(
+        `users/${suggesterUid}/gameStats/queue/numEnqueuedTracks`
+      );
+      await numEnqueuedRef.transaction((currCnt) => {
+        return (currCnt || 0) + 1;
+      });
 
       return { success: true, queueItemId: newTrackRef.key };
     } catch (e: any) {
@@ -406,6 +430,11 @@ export const voteForTrack = onCall(
 
       const allVotesSnapshot = await trackRef.child("votes").once("value");
       await trackRef.child("voteCount").set(allVotesSnapshot.numChildren());
+
+      const numVotesRef = db.ref(`users/${voterUid}/gameStats/queue/numVotes`);
+      await numVotesRef.transaction((currCnt) => {
+        return (currCnt || 0) + 1;
+      });
 
       return { success: true };
     } catch (e: any) {

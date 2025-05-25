@@ -1,5 +1,5 @@
 // functions
-import { BrowserRouter as Router, Routes, Route } from "react-router";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 import { useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -20,7 +20,6 @@ import Login from "./pages/Login";
 import Home from "./pages/Home";
 
 import ProfileLayout from "./pages/ProfileLayout";
-import Profile from "./pages/Profile";
 import Following from "./pages/Following";
 import Followers from "./pages/Followers";
 
@@ -75,10 +74,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
         <Route path="/profile/:username" element={<ProfileLayout />}>
-          <Route path="overview" element={<Profile />} />
+          <Route index element={<Navigate to="spotify-stats" replace />} />
+          <Route path="spotify-stats" element={<SpotifyStats />} />
           <Route path="following" element={<Following />} />
           <Route path="followers" element={<Followers />} />
-          <Route path="stats" element={<SpotifyStats />} />
         </Route>
         <Route path="/spotify-callback" element={<SpotifyCallback />} />
         <Route path="/queue" element={<Queue />}></Route>

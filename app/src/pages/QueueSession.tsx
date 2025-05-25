@@ -144,15 +144,6 @@ function QueueSession() {
           currEndingTrackUriRef.current = "";
         }
 
-        // console.log(
-        //   "lastplayed",
-        //   lastPlayedByAppUriRef,
-        //   "currState",
-        //   currState.item.uri,
-        //   "queue",
-        //   sessionData?.queue
-        // );
-
         // we play the next track in queue if:
         // - this is the first song to be enqueued
         // - the current playing song was not enqueued through the app

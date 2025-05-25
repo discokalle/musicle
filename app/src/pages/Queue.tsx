@@ -68,6 +68,7 @@ function Queue() {
 
       const data = res.data as { sessionId: string };
       const sessionId = data.sessionId;
+
       navigate(sessionId);
     } catch (e: any) {
       alert(`Failed to create Queue session: ${e.message}`);
