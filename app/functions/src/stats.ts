@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   onCall,
   CallableRequest,
@@ -40,7 +41,7 @@ export const getTopTracks = onCall(
         userId: userId,
       });
 
-      let topTracks: TrackData[] = [];
+      const topTracks: TrackData[] = [];
       for (const item of res.items) {
         topTracks.push({
           uri: item.uri,
