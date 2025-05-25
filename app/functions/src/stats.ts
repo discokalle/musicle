@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   onCall,
   CallableRequest,
@@ -18,7 +17,6 @@ import { ArtistData, TrackData } from "../../src/types";
  * short_term (approximately last 4 weeks).
  * Default: medium_term
  */
-
 export const getTopTracks = onCall(
   async (req: CallableRequest<{ userId: string; timeRange: string }>) => {
     const { userId, timeRange } = req.data;

@@ -10,19 +10,6 @@ import "./config";
 setGlobalOptions({ region: "europe-west1" });
 // ----
 
-// DEBUG:
-// it is possible to deploy a function directly from index.ts as below,
-// but for some reason all the other exports fail from the other files...
-// might just stick to hosting the functions using the Firebase emulator
-// import { onCall } from "firebase-functions/v2/https";
-// export const ultraMinimalTest = onCall((request) => {
-//   console.log("Ultra minimal test function was called!");
-//   return {
-//     success: true,
-//     message: "Container started with ultra minimal setup!",
-//   };
-// });
-
 import * as spotify from "./spotify";
 import * as stats from "./stats";
 import * as queue from "./queue";

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as admin from "firebase-admin";
 import {
   CallableRequest,
@@ -346,7 +345,6 @@ export const addTrackToQueue = onCall(
         suggesterUsername: req.auth.token.name,
         votes: {},
         voteCount: 0,
-        // addedAt: admin.database.ServerValue.TIMESTAMP,
         addedAt: Date.now(),
       } as QueueItemData);
 
@@ -574,6 +572,13 @@ export const playNextTrack = onCall(
 
 /** SPOTIFY QUEUE SETUP FOR SESSION ***********************************/
 
+// The functions below were scrapped because:
+// clearQueueOnSpotify() returns not only the items that are enqueued manually,
+// but also items that follow in a playlist or that Spotify recommends...
+// So this cannot be used to detect the length of the actual queue on Spotify,
+// and thus the rest of the logic/functions can not be reliably used either.
+// Luckily, we could solve the queue mechanism in a different way.
+
 /**
 export const skipCurrentTrack = onCall(
   async (req: CallableRequest<{ sessionId: string }>) => {
@@ -706,8 +711,6 @@ export const changePlaybackState = onCall(
 */
 
 /**
-// Returns not only the items that are enqueued manually, but also items that follow in a playlist or
-// that Spotify recommends... So this cannot be used to detect the length of the actual queue! :(
 export const getSpotifyQueue = onCall(
   async (req: CallableRequest<{ sessionId: string }>) => {
     if (!req.auth) {

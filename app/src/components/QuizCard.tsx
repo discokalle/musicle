@@ -34,18 +34,24 @@ function QuizCard({
   const questionCSS = "text-neutral text-lg font-bold mb-4";
   const wrapperCSS = "flex flex-col gap-2";
   const optionDefaultCSS =
-    "py-2 px-4 rounded border-2 w-full font-bold text-neutral text-left bg-primary border-accent hover:bg-accent hover:text-primary";
+    "py-2 px-4 rounded border-2 w-full font-bold text-neutral text-left\
+     bg-primary border-accent hover:bg-accent hover:text-primary";
   const optionSelectedCSS =
-    "py-2 px-4 rounded border-2 w-full font-bold text-primary text-left bg-accent border-primary";
+    "py-2 px-4 rounded border-2 w-full font-bold text-primary text-left\
+     bg-accent border-primary";
   const optionCorrectCSS =
-    "py-2 px-4 rounded border-2 w-full font-bold text-neutral text-left bg-green-500 border-green-700";
+    "py-2 px-4 rounded border-2 w-full font-bold text-neutral text-left\
+     bg-green-500 border-green-700";
   const optionIncorrectCSS =
-    "py-2 px-4 rounded border-2 w-full font-bold text-neutral text-left bg-red-500 border-red-700";
+    "py-2 px-4 rounded border-2 w-full font-bold text-neutral text-left\
+     bg-red-500 border-red-700";
   const buttonsContainerCSS = "mt-6 flex flex-col gap-3 w-full";
   const buttonEnabledCSS =
-    "py-2 px-4 rounded w-full font-bold text-accent bg-primary hover:bg-accent hover:text-primary cursor-pointer";
+    "py-2 px-4 rounded w-full font-bold text-accent bg-primary\
+     hover:bg-accent hover:text-primary cursor-pointer";
   const buttonDisabledCSS =
-    "py-2 px-4 rounded w-full font-bold text-neutral bg-primary opacity-25 cursor-not-allowed";
+    "py-2 px-4 rounded w-full font-bold text-neutral bg-primary\
+     opacity-25 cursor-not-allowed";
   const feedbackContainerCSS =
     "text-xl font-bold text-center mt-4 min-h-[1.5rem]";
   const feedbackCorrectCSS = "text-green-600";

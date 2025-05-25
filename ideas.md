@@ -1,29 +1,5 @@
 # Ideas
 
-## Functionality
-
-### To-do's (in order of priority)
-
-- Games/social features:
-
-  - Music quiz that is generated based on the users preferences
-  - Queue for in-person listening sessions with voting
-  - (Minigames like "guess the song based on the lyrics")
-
-- Add a proper loading animation
-
-- Add profile picture upload option for users
-
-- Add push notiflications using Firebase (e.g., for inviting people to queue sessions)
-
-- In the end:
-  - Add a prompt that tells a user how their Spotify data will be used in the app
-    if they choose to connect (e.g., used for playback in queue session if they host,
-    or to display their Spotify stats on their profiles which other users also can see)
-  - Update RTDB rules
-  - Polish the design parts and select a suitable theme
-  - Go through and remove console logs (at least those exposing private info)
-
 ## API resources
 
 - General API collections
