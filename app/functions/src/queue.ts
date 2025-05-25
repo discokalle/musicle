@@ -10,6 +10,8 @@ import { TrackData, SessionData, QueueItemData } from "../../src/types";
 
 const db = admin.database();
 
+/** SPOTIFY DEVICE SETUP *************************************************/
+
 export const getActiveSpotifyDevices = onCall(async (req: CallableRequest) => {
   if (!req.auth) {
     throw new HttpsError(
@@ -102,32 +104,7 @@ export const setSpotifyDevice = onCall(
   }
 );
 
-export const getSpotifyPlaybackState = onCall(async (req: CallableRequest) => {
-  if (!req.auth) {
-    throw new HttpsError(
-      "unauthenticated",
-      "Authentication required to get playback state."
-    );
-  }
-
-  const userId = req.auth.uid;
-
-  try {
-    const res = await callSpotifyApi({
-      endpoint: "/v1/me/player",
-      method: "GET",
-      userId: userId,
-    });
-
-    return { playbackState: res };
-  } catch (e: any) {
-    throw new HttpsError(
-      "internal",
-      "Failed to get playback state.",
-      e.message
-    );
-  }
-});
+/** CREATE/JOIN SESSION ************************************************/
 
 export const createSession = onCall(async (req: CallableRequest) => {
   if (!req.auth) {
@@ -150,15 +127,22 @@ export const createSession = onCall(async (req: CallableRequest) => {
   }
 
   try {
-    // console.log("SERVER: entered try");
     const sessionRef = db.ref("sessions").push();
-    // console.log("SERVER: sessionRef", sessionRef);
     const sessionId = sessionRef.key;
-    // console.log("SERVER: sessionId", sessionId);
-    // console.log("SERVER: hostUserId", hostUserId);
-    // console.log("SERVER: createdAt", Date.now());
 
     await db.ref(`users/${hostUserId}/hostingSessionId`).set(sessionId);
+    const numHostedRef = db.ref(
+      `users/${hostUserId}/gameStats/queue/numHostedSessions`
+    );
+    await numHostedRef.transaction((currCnt) => {
+      return (currCnt || 0) + 1;
+    });
+    const numParticipatedRef = db.ref(
+      `users/${hostUserId}/gameStats/queue/numParticipatedSessions`
+    );
+    await numParticipatedRef.transaction((currCnt) => {
+      return (currCnt || 0) + 1;
+    });
 
     await sessionRef.set({
       hostUserId: hostUserId,
@@ -166,7 +150,6 @@ export const createSession = onCall(async (req: CallableRequest) => {
         [hostUserId]: true,
       },
       queue: {},
-      // createdAt: admin.database.ServerValue.TIMESTAMP,
       createdAt: Date.now(),
     } as SessionData);
 
@@ -203,6 +186,12 @@ export const joinSession = onCall(
       }
 
       await db.ref(`sessions/${sessionId}/participants/${userId}`).set(true);
+      const numParticipatedRef = db.ref(
+        `users/${userId}/gameStats/queue/numParticipatedSessions`
+      );
+      await numParticipatedRef.transaction((currCnt) => {
+        return (currCnt || 0) + 1;
+      });
 
       console.log(`User ${userId} joined session ${sessionId}`);
 
@@ -213,6 +202,8 @@ export const joinSession = onCall(
     }
   }
 );
+
+/** SEARCH, ENQUEUE & VOTE FOR TRACKS ***********************************/
 
 export const searchSpotifyTracks = onCall(
   async (req: CallableRequest<{ sessionId: string; query: string }>) => {
@@ -318,7 +309,6 @@ export const addTrackToQueue = onCall(
     const suggesterUid = req.auth.uid;
 
     const { sessionId, trackData } = req.data;
-    // console.log(sessionId, trackData);
 
     if (!sessionId || typeof sessionId !== "string") {
       throw new HttpsError("invalid-argument", "Missing or invalid sessionId.");
@@ -355,9 +345,15 @@ export const addTrackToQueue = onCall(
         suggesterUsername: req.auth.token.name,
         votes: {},
         voteCount: 0,
-        // addedAt: admin.database.ServerValue.TIMESTAMP,
         addedAt: Date.now(),
       } as QueueItemData);
+
+      const numEnqueuedRef = db.ref(
+        `users/${suggesterUid}/gameStats/queue/numEnqueuedTracks`
+      );
+      await numEnqueuedRef.transaction((currCnt) => {
+        return (currCnt || 0) + 1;
+      });
 
       return { success: true, queueItemId: newTrackRef.key };
     } catch (e: any) {
@@ -434,6 +430,11 @@ export const voteForTrack = onCall(
       const allVotesSnapshot = await trackRef.child("votes").once("value");
       await trackRef.child("voteCount").set(allVotesSnapshot.numChildren());
 
+      const numVotesRef = db.ref(`users/${voterUid}/gameStats/queue/numVotes`);
+      await numVotesRef.transaction((currCnt) => {
+        return (currCnt || 0) + 1;
+      });
+
       return { success: true };
     } catch (e: any) {
       if (e instanceof HttpsError) {
@@ -444,7 +445,35 @@ export const voteForTrack = onCall(
   }
 );
 
-// currently works by enqueueing a track as the previous one ends
+/** PLAY NEXT TRACK IN QUEUE **************************************/
+
+export const getSpotifyPlaybackState = onCall(async (req: CallableRequest) => {
+  if (!req.auth) {
+    throw new HttpsError(
+      "unauthenticated",
+      "Authentication required to get playback state."
+    );
+  }
+
+  const userId = req.auth.uid;
+
+  try {
+    const res = await callSpotifyApi({
+      endpoint: "/v1/me/player",
+      method: "GET",
+      userId: userId,
+    });
+
+    return { playbackState: res };
+  } catch (e: any) {
+    throw new HttpsError(
+      "internal",
+      "Failed to get playback state.",
+      e.message
+    );
+  }
+});
+
 export const playNextTrack = onCall(
   async (req: CallableRequest<{ sessionId: string }>) => {
     if (!req.auth) {
@@ -509,20 +538,15 @@ export const playNextTrack = onCall(
         );
       }
 
-      // console.log(
-      //   "Spotify API Request from playNextTrack:",
-      //   nextTrack.track.uri,
-      //   hostUserId,
-      //   sessionData.deviceId
-      // );
-
       await callSpotifyApi({
-        endpoint: "/v1/me/player/queue",
-        method: "POST",
+        endpoint: "/v1/me/player/play",
+        method: "PUT",
         userId: hostUserId,
         queryParams: {
-          uri: nextTrack.track.uri,
           device_id: sessionData.deviceId,
+        },
+        bodyData: {
+          uris: [nextTrack.track.uri],
         },
       });
 
@@ -545,3 +569,286 @@ export const playNextTrack = onCall(
     }
   }
 );
+
+/** SPOTIFY QUEUE SETUP FOR SESSION ***********************************/
+
+// The functions below were scrapped because:
+// clearQueueOnSpotify() returns not only the items that are enqueued manually,
+// but also items that follow in a playlist or that Spotify recommends...
+// So this cannot be used to detect the length of the actual queue on Spotify,
+// and thus the rest of the logic/functions can not be reliably used either.
+// Luckily, we could solve the queue mechanism in a different way.
+
+/**
+export const skipCurrentTrack = onCall(
+  async (req: CallableRequest<{ sessionId: string }>) => {
+    if (!req.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Authentication required to play next track."
+      );
+    }
+    const hostUserId = req.auth.uid;
+    const { sessionId } = req.data;
+
+    if (!sessionId || typeof sessionId !== "string") {
+      throw new HttpsError("invalid-argument", "Missing or invalid sessiondId");
+    }
+    try {
+      const sessionRef = db.ref(`sessions/${sessionId}`);
+      const sessionSnapshot = await sessionRef.once("value");
+
+      if (!sessionSnapshot.exists()) {
+        throw new HttpsError("not-found", "Session not found.");
+      }
+
+      const sessionData = sessionSnapshot.val();
+      if (sessionData.hostUserId !== hostUserId) {
+        throw new HttpsError("permission-denied", "Only the host skip tracks.");
+      }
+      if (sessionData.isEnded) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has already ended."
+        );
+      }
+      if (!sessionData.deviceId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has not connected to a Spotify device."
+        );
+      }
+      await callSpotifyApi({
+        endpoint: "/v1/me/player/next",
+        method: "POST",
+        userId: hostUserId,
+        queryParams: {
+          device_id: sessionData.deviceId,
+        },
+      });
+      return {
+        success: true,
+        message: "The next track was successfully skipped.",
+      };
+    } catch (e: any) {
+      if (e instanceof HttpsError) {
+        throw e;
+      }
+      throw new HttpsError("internal", "Failed to skip track.", e.message);
+    }
+  }
+);
+*/
+
+/**
+// changes the playback state
+// `play` = true starts/resumes playback, false pauses playback
+export const changePlaybackState = onCall(
+  async (req: CallableRequest<{ sessionId: string; play: boolean }>) => {
+    if (!req.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Authentication required to play next track."
+      );
+    }
+    const hostUserId = req.auth.uid;
+    const { sessionId, play } = req.data;
+
+    if (!sessionId || typeof sessionId !== "string") {
+      throw new HttpsError("invalid-argument", "Missing or invalid sessiondId");
+    }
+    if (typeof play !== "boolean") {
+      throw new HttpsError(
+        "invalid-argument",
+        "Missing or invalid play parameter"
+      );
+    }
+
+    try {
+      const sessionRef = db.ref(`sessions/${sessionId}`);
+      const sessionSnapshot = await sessionRef.once("value");
+
+      if (!sessionSnapshot.exists()) {
+        throw new HttpsError("not-found", "Session not found.");
+      }
+
+      const sessionData = sessionSnapshot.val();
+      if (sessionData.hostUserId !== hostUserId) {
+        throw new HttpsError(
+          "permission-denied",
+          "Only the host can control playback."
+        );
+      }
+      if (sessionData.isEnded) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has already ended."
+        );
+      }
+      if (!sessionData.deviceId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has not connected to a Spotify device."
+        );
+      }
+      await callSpotifyApi({
+        endpoint: `v1/me/player/${play ? "play" : "pause"}`,
+        method: "PUT",
+        userId: hostUserId,
+        queryParams: {
+          device_id: sessionData.deviceId,
+        },
+      });
+    } catch (e: any) {
+      throw new HttpsError(
+        "internal",
+        "Failed to change Spotify playback",
+        e.message
+      );
+    }
+  }
+);
+*/
+
+/**
+export const getSpotifyQueue = onCall(
+  async (req: CallableRequest<{ sessionId: string }>) => {
+    if (!req.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Authentication required to play next track."
+      );
+    }
+    const hostUserId = req.auth.uid;
+    const { sessionId } = req.data;
+
+    if (!sessionId || typeof sessionId !== "string") {
+      throw new HttpsError("invalid-argument", "Missing or invalid sessiondId");
+    }
+    try {
+      const sessionRef = db.ref(`sessions/${sessionId}`);
+      const sessionSnapshot = await sessionRef.once("value");
+
+      if (!sessionSnapshot.exists()) {
+        throw new HttpsError("not-found", "Session not found.");
+      }
+
+      const sessionData = sessionSnapshot.val();
+      if (sessionData.hostUserId !== hostUserId) {
+        throw new HttpsError(
+          "permission-denied",
+          "Only the host can control playback."
+        );
+      }
+      if (sessionData.isEnded) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has already ended."
+        );
+      }
+      if (!sessionData.deviceId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has not connected to a Spotify device."
+        );
+      }
+
+      return {
+        queue: await callSpotifyApi({
+          endpoint: `v1/me/player/queue`,
+          method: "GET",
+          userId: hostUserId,
+        }),
+      };
+    } catch (e: any) {
+      throw new HttpsError(
+        "internal",
+        "Failed to clear Spotify queue.",
+        e.message
+      );
+    }
+  }
+);
+*/
+
+/**
+export const clearQueueOnSpotify = onCall(
+  async (req: CallableRequest<{ sessionId: string }>) => {
+    if (!req.auth) {
+      throw new HttpsError(
+        "unauthenticated",
+        "Authentication required to play next track."
+      );
+    }
+    const hostUserId = req.auth.uid;
+    const { sessionId } = req.data;
+
+    if (!sessionId || typeof sessionId !== "string") {
+      throw new HttpsError("invalid-argument", "Missing or invalid sessiondId");
+    }
+    try {
+      const sessionRef = db.ref(`sessions/${sessionId}`);
+      const sessionSnapshot = await sessionRef.once("value");
+
+      if (!sessionSnapshot.exists()) {
+        throw new HttpsError("not-found", "Session not found.");
+      }
+
+      const sessionData = sessionSnapshot.val();
+      if (sessionData.hostUserId !== hostUserId) {
+        throw new HttpsError(
+          "permission-denied",
+          "Only the host can control playback."
+        );
+      }
+      if (sessionData.isEnded) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has already ended."
+        );
+      }
+      if (!sessionData.deviceId) {
+        throw new HttpsError(
+          "failed-precondition",
+          "The session has not connected to a Spotify device."
+        );
+      }
+
+      const res = await callSpotifyApi({
+        endpoint: `v1/me/player/queue`,
+        method: "GET",
+        userId: hostUserId,
+      });
+
+      console.log(res.data.queue);
+
+      const numSkips =
+        res.data.queue.length + res.data.currentlyPlaying ? 1 : 0;
+      for (let i = 0; i < numSkips; ++i) {
+          await callSpotifyApi({
+            endpoint: "/v1/me/player/next",
+            method: "POST",
+            userId: hostUserId,
+            queryParams: {
+              device_id: deviceId,
+            },
+          });
+      }
+
+      return {
+        success: true,
+        message: "Spotify queue was successfully cleared.",
+      };
+    } catch (e: any) {
+      if (e instanceof HttpsError) {
+        throw e;
+      }
+      throw new HttpsError(
+        "internal",
+        "Failed to clear Spotify queue.",
+        e.message
+      );
+    }
+  }
+);
+*/

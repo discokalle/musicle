@@ -14,6 +14,8 @@ import {
 
 const db = admin.database();
 
+/** ACCESS & REFRESH TOKEN EXCHANGE/UPDATE *****************************/
+
 export const exchangeSpotifyCode = onCall(
   async (req: CallableRequest<{ code: string }>) => {
     if (!req.auth) {
@@ -78,7 +80,6 @@ export const exchangeSpotifyCode = onCall(
       });
 
       return { success: true, message: "Spotify connected successfully." };
-      // eslint-disable-next-line
     } catch (e: any) {
       console.error(
         "Error exchanging Spotify code for user:",
@@ -158,7 +159,6 @@ const refreshAccessToken = async (userId: string) => {
     await db.ref(`users/${userId}/spotify`).update(updates);
     console.log(`Successfully refreshed token for user: ${userId}`);
     return newAccessToken;
-    // eslint-disable-next-line
   } catch (e: any) {
     console.error(
       "Error during Spotify token refresh",
@@ -179,6 +179,8 @@ const refreshAccessToken = async (userId: string) => {
     );
   }
 };
+
+/** SPOTIFY API CALL *******************************************/
 
 export const callSpotifyApi = async ({
   endpoint,
@@ -249,14 +251,7 @@ export const callSpotifyApi = async ({
     });
 
     return res.data;
-    // eslint-disable-next-line
   } catch (e: any) {
-    // console.log("DEBUGDEBUGDEBUGDEBUG");
-    // console.log(e.response.data);
-    // console.log(e.message);
-    // console.log(e.code);
-    // console.log("DEBUGDEBUGDEBUGDEBUG");
-
     if (e instanceof HttpsError) {
       throw e;
     }

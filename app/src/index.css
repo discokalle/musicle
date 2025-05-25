@@ -12,18 +12,10 @@
 }
 
 @layer utilities {
-  .panel-card {
-    @apply bg-secondary rounded-md
-    object-cover px-4 py-3 shadow-md/25;
-  }
-
-  .link-highlight {
-    @apply text-neutral transition duration-250 hover:underline hover:text-accent;
-  }
-
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;

@@ -1,8 +1,10 @@
 import Button from "../components/Button";
 import ProfileBanner from "../components/ProfileBanner";
+import LoadingAnimation from "../components/LoadingAnimation";
 
-import spotifyLogo from "../assets/spotify-logo-cartoon.png";
+import spotifyLogo from "../assets/spotify-logo.png";
 
+import clsx from "clsx";
 import {
   useParams,
   Link,
@@ -15,6 +17,8 @@ import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 import { auth, db } from "../firebase";
+
+import { linkHighlightCSS, panelCardCSS } from "../styles";
 
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
@@ -57,7 +61,7 @@ function ProfileLayout() {
   }, [username]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   if (error || !userSnapshot) {
@@ -98,29 +102,35 @@ function ProfileLayout() {
   };
 
   const subsecs = [
-    ["Overview", `/profile/${username}`],
+    ["Spotify Stats", `/profile/${username}/spotify-stats`],
     ["Followers", `/profile/${username}/followers`],
     ["Following", `/profile/${username}/following`],
-    ["Stats", `/profile/${username}/stats`],
   ];
 
   const containerCSS =
-    "w-[50%] text-neutral absolute flex flex-col left-[5%] top-[15%] gap-5";
+    "w-[60%] text-neutral absolute left-1/2 top-1/6 -translate-x-1/2 flex flex-col gap-5";
 
   return (
     <div className={containerCSS}>
       <ProfileBanner userSnapshot={userSnapshot}></ProfileBanner>
-
-      <div className="flex justify-between gap-8">
-        <div className="panel-card flex items-center justify-between flex-grow">
+      <div className="flex justify-between gap-4">
+        <div
+          className={clsx(
+            panelCardCSS,
+            "flex items-center justify-between flex-grow"
+          )}
+        >
           {subsecs.map(([secName, secLink]) => {
             return (
               <Link
                 key={secName}
                 to={secLink}
-                className={`link-highlight text-lg ${
-                  location.pathname === secLink ? "underline font-bold" : ""
-                }`}
+                className={clsx(
+                  linkHighlightCSS,
+                  `text-lg ${
+                    location.pathname === secLink ? "underline font-bold" : ""
+                  }`
+                )}
               >
                 {secName}
               </Link>
@@ -142,7 +152,7 @@ function ProfileLayout() {
               <img
                 src={spotifyLogo}
                 alt="Spotify Logo"
-                className="h-5 w-auto"
+                className="h-6 w-auto"
               ></img>
             </span>
           </Button>

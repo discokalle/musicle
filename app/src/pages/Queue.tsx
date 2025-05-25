@@ -1,4 +1,5 @@
 import Button from "../components/Button";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import { useLocation, useNavigate } from "react-router";
 import { httpsCallable } from "firebase/functions";
@@ -6,6 +7,8 @@ import { httpsCallable } from "firebase/functions";
 import { auth, db, functions } from "../firebase";
 import { useEffect, useState } from "react";
 import { get, ref } from "firebase/database";
+
+import { centerContainerCSS, subtitleCSS, titleCSS } from "../styles";
 
 const createSession = httpsCallable<{}, { sessionId: string }>(
   functions,
@@ -65,9 +68,10 @@ function Queue() {
 
       const data = res.data as { sessionId: string };
       const sessionId = data.sessionId;
-      // alert("Queue session created successfully!");
+
       navigate(sessionId);
     } catch (e: any) {
+      alert(`Failed to create Queue session: ${e.message}`);
       console.log(e.code, e.message);
     }
   };
@@ -95,29 +99,27 @@ function Queue() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
-
-  const centerContainerCSS =
-    "absolute flex flex-col gap-7 items-center left-1/2 top-[40%] transform -translate-x-1/2";
-
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
 
   return (
     <div className={centerContainerCSS}>
       <h1 className={titleCSS}>
         This is{" "}
-        <span className="italic text-accent font-bold">THE LIVE QUEUE!</span>
+        <span className="italic text-accent font-bold">THE LIVE QUEUE</span>
       </h1>
-      <p className="text-neutral text-xl">
-        Gather your friends and queue songs in a joint Spotify session in
+      <p className={subtitleCSS}>
+        Gather your friends and queue songs fairly with a voting system in
         real-time!
       </p>
 
       <div className="flex gap-10">
-        <Button onClick={handleCreateSession}>Create Queue</Button>
-        <Button onClick={handleJoinSession}>Join Queue</Button>
+        <Button onClick={handleCreateSession} size="large">
+          Create
+        </Button>
+        <Button onClick={handleJoinSession} size="large">
+          Join
+        </Button>
       </div>
     </div>
   );

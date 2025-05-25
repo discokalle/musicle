@@ -6,19 +6,25 @@ import {
   updateProfile,
 } from "firebase/auth";
 import { ref, set, get } from "firebase/database";
+import clsx from "clsx";
 
 import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
+import LoadingAnimation from "../components/LoadingAnimation";
+
+import { centerContainerCSS, titleCSS } from "../styles";
 
 function SignUp() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async () => {
     try {
+      setIsLoading(true);
       if (username.length > 12) {
         throw new Error("Username can at most be 12 characters long.");
       }
@@ -26,6 +32,7 @@ function SignUp() {
       const snapshot = await get(ref(db, `usernames/${username}`));
       if (snapshot.exists()) {
         alert("Username is already taken. Please try again.");
+        setIsLoading(false);
         return;
       }
 
@@ -44,6 +51,7 @@ function SignUp() {
       });
       await updateProfile(userCred.user, { displayName: username });
 
+      setIsLoading(false);
       navigate("/home");
     } catch (e: any) {
       if (e.code == AuthErrorCodes.INVALID_EMAIL) {
@@ -53,6 +61,7 @@ function SignUp() {
       } else {
         alert(`Error: ${e.message}`);
       }
+      setIsLoading(false);
     }
   };
 
@@ -64,18 +73,16 @@ function SignUp() {
     }
   };
 
-  const centerContainerCSS =
-    "absolute flex flex-col gap-10 items-center left-1/2 top-[30%] transform -translate-x-1/2";
-
-  const titleCSS =
-    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
+  if (isLoading) {
+    return <LoadingAnimation></LoadingAnimation>;
+  }
 
   const inputCSS =
     "text-neutral w-[90%] mx-auto p-2 border border-gray-300 rounded-md\
      focus:outline-none focus:ring-2 focus:ring-accent";
 
   return (
-    <div className={centerContainerCSS}>
+    <div className={clsx(centerContainerCSS, "!gap-10")}>
       <h1 className={titleCSS}>Create Your Account</h1>
       <div className="flex flex-col gap-5 text-xl w-full">
         <input

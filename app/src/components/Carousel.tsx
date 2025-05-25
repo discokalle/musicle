@@ -1,13 +1,14 @@
 type Props = {
   children: React.ReactNode;
+  className: string;
 };
 
-function Carousel({ children }: Props) {
+function Carousel({ children, className }: Props) {
   return (
-    <div className="p-5">
-      <div className="relative overflow-x-auto w-200 flex gap-5 py-5">
-        <div className="flex gap-3 pl-5 pr-5">{children}</div>
-      </div>
+    <div
+      className={`${className} relative overflow-x-auto w-200 flex gap-5 overflow-y-hidden pb-3`}
+    >
+      <div className="flex gap-3 pl-5 pr-5">{children}</div>
     </div>
   );
 }

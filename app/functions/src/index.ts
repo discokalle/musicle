@@ -4,8 +4,10 @@ import * as admin from "firebase-admin";
 // IMPORTANT: the following must be run before importing other firebase function files
 // ----
 admin.initializeApp();
-import { spotifyClientSecretVar } from "./config";
-setGlobalOptions({ region: "europe-west1", secrets: [spotifyClientSecretVar] });
+// import { spotifyClientSecretVar } from "./config";
+// setGlobalOptions({ region: "europe-west1", secrets: [spotifyClientSecretVar] });
+import "./config";
+setGlobalOptions({ region: "europe-west1" });
 // ----
 
 import * as spotify from "./spotify";
@@ -16,6 +18,7 @@ import * as quiz from "./quiz";
 export const exchangeSpotifyCode = spotify.exchangeSpotifyCode;
 
 export const getTopTracks = stats.getTopTracks;
+export const getTopArtists = stats.getTopArtists;
 
 export const getActiveSpotifyDevices = queue.getActiveSpotifyDevices;
 export const setSpotifyDevice = queue.setSpotifyDevice;

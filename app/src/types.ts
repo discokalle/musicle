@@ -19,6 +19,14 @@ export type TrackData = {
   isrc: string;
 };
 
+export type ArtistData = {
+  uri: string;
+  name: string;
+  image: string;
+  genres: string[];
+  numFollowers: number;
+};
+
 export type QueueItemData = {
   addedAt: number;
   suggesterUsername: string;

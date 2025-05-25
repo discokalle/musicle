@@ -1,10 +1,13 @@
 import SearchBarDb from "./SearchBarDb";
 
+import { clsx } from "clsx";
 import { Link, useLocation, useNavigate } from "react-router";
 import { signOut } from "firebase/auth";
+import { ref, set } from "firebase/database";
 
 import { auth, db } from "../firebase";
-import { ref, set } from "firebase/database";
+
+import { linkHighlightCSS } from "../styles";
 
 type Props = {
   logo: string;
@@ -35,7 +38,9 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
 
   return (
     <div className={containerCSS}>
-      <img src={logo} alt="Logo" className="relative h-[75%]" />
+      <Link to="/home" className="relative inline-block h-[75%]">
+        <img src={logo} alt="Logo" className="w-full h-full" />
+      </Link>
       {isLoggedIn && (
         <SearchBarDb
           dbCollectionName="usernames"
@@ -60,9 +65,12 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
                   : colLink + "/" + auth.currentUser?.displayName ||
                     "unknown-user"
               }
-              className={`link-highlight text-lg ${
-                location.pathname === colLink ? "underline font-bold" : ""
-              }`}
+              className={clsx(
+                linkHighlightCSS,
+                `text-lg ${
+                  location.pathname === colLink ? "underline font-bold" : ""
+                }`
+              )}
               onClick={colLink === "/" ? handleSignOut : undefined}
             >
               {colName}
