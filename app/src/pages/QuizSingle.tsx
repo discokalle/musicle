@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
+import { Question } from "../types";
 import { getInfoByISRC } from "../song-info";
-import QuizCard, { Question } from "../components/QuizCard";
+import QuizCard from "../components/QuizCard";
 import { generateQuestions } from "../question-generator";
 
 //ISRC codes seem to be universal across services for recordings.
@@ -93,7 +94,7 @@ function QuizSingle() {
         isLockedIn={isLockedIn}
         onSelect={handleSelect}
         onLockIn={handleLockIn}
-        onNext={handleNext} // <-- passing continue logic here
+        onNext={handleNext}
         score={score}
         totalQuestions={questions.length}
         questionNumber={questionNumber}

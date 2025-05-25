@@ -1,135 +1,115 @@
+import Button from "../components/Button";
+
+import { useLocation, useNavigate } from "react-router";
+import { httpsCallable } from "firebase/functions";
+
+import { auth, db, functions } from "../firebase";
 import { useEffect, useState } from "react";
-import { getInfoByISRC } from "../song-info";
-import QuizCard, { Question } from "../components/QuizCard";
-import { generateQuestions } from "../question-generator";
+import { get, ref } from "firebase/database";
 
-const ISRCs = ["GBN9Y1100088", "USSM17700373"];
-const countdown = 10;
-
-function randomPick(array: Question[], count: number): Question[] {
-  return [...array].sort(() => 0.5 - Math.random()).slice(0, count);
-}
-
-function shuffle(array: Question[]): Question[] {
-  return [...array].sort(() => 0.5 - Math.random());
-}
+const createQuiz = httpsCallable<{}, { quizId: string }>(
+  functions,
+  "createQuiz"
+);
+const joinQuiz = httpsCallable<{ quizId: string }, { success: boolean }>(
+  functions,
+  "joinQuiz"
+);
 
 function QuizMulti() {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [questionNumber, setQuestionNumber] = useState(1);
-  const [selectedOption, setSelectedOption] = useState<string>();
-  const [isLockedIn, setIsLockedIn] = useState(false);
-  const [score, setScore] = useState(0);
-
-  const [showScoreboard, setShowScoreboard] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(countdown);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function loadQuestions() {
-      const finalQuestions: Question[] = [];
-      for (const isrc of ISRCs) {
-        const song = await getInfoByISRC(isrc);
-        if (song) {
-          const generated = generateQuestions(song);
-          const picked = randomPick(generated, 2);
-          finalQuestions.push(...picked);
-        }
-      }
-      setQuestions(shuffle(finalQuestions));
-      setLoading(false);
+    setIsLoading(true);
+
+    if (location.state?.message) {
+      const timerId = setTimeout(() => {
+        alert(location.state.message);
+        navigate(location.pathname, { replace: true, state: {} });
+      }, 50);
+
+      return () => clearTimeout(timerId);
     }
-    loadQuestions();
-  }, []);
 
-  useEffect(() => {
-    if (isLockedIn || showScoreboard) return;
+    const handleIfUserIsHostingQuiz = async () => {
+      try {
+        const snapshot = await get(
+          ref(db, `users/${auth.currentUser?.uid}/hostingQuizId`)
+        );
 
-    if (timeLeft <= 0) {
-      handleTimeout();
+        if (snapshot.exists()) {
+          navigate(snapshot.val());
+        }
+      } catch (e: any) {
+        console.log("Error:", e.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    handleIfUserIsHostingQuiz();
+  }, [location.state?.message, navigate]);
+
+  const handleCreateQuiz = async () => {
+    try {
+      const res = await createQuiz();
+      if (!res) {
+        alert("Failed to create Quiz.");
+        return;
+      }
+
+      const quizId = res.data.quizId;
+      navigate(quizId);
+    } catch (e: any) {
+      console.log(e.code, e.message);
+    }
+  };
+
+  const handleJoinQuiz = async () => {
+    const quizIdInput = window.prompt("Please enter the Quiz ID to join:");
+
+    if (quizIdInput === null || quizIdInput.trim() === "") {
       return;
     }
 
-    const timer = setTimeout(() => setTimeLeft((t) => t - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, isLockedIn, showScoreboard]);
+    try {
+      const res = await joinQuiz({ quizId: quizIdInput });
+      if (!res || !res.data?.success) {
+        alert("Failed to join Quiz.");
+        return;
+      }
 
-  function handleTimeout() {
-    setIsLockedIn(true);
-  }
-
-  function handleSelect(option: string) {
-    if (!isLockedIn) setSelectedOption(option);
-  }
-
-  function handleLockIn() {
-    if (!selectedOption) return;
-    setIsLockedIn(true);
-    if (selectedOption === questions[questionNumber - 1].answer) {
-      setScore((s) => s + 1);
+      navigate(quizIdInput);
+    } catch (e: any) {
+      alert(`An error occurred while attempting to connect: ${e.message}`);
     }
+  };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
   }
 
-  function handleNext() {
-    setShowScoreboard(true);
-    setTimeout(() => {
-      setShowScoreboard(false);
-      setIsLockedIn(false);
-      setSelectedOption(undefined);
-      setQuestionNumber((n) => n + 1);
-      setTimeLeft(countdown);
-    }, 3000);
-  }
+  const centerContainerCSS =
+    "absolute flex flex-col gap-7 items-center left-1/2 top-[40%] transform -translate-x-1/2";
 
-  const centerCSS =
-    "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2";
-
-  if (loading) {
-    return (
-      <div className={centerCSS}>
-        <p className="text-neutral">Loading...</p>
-      </div>
-    );
-  }
-
-  if (questionNumber > questions.length) {
-    return (
-      <div className={centerCSS}>
-        <div className="text-center text-xl font-semibold text-neutral">
-          Quiz Complete! Your score: {score} / {questions.length}
-        </div>
-      </div>
-    );
-  }
-
-  if (showScoreboard) {
-    return (
-      <div className={centerCSS}>
-        <div className="text-center text-xl font-bold text-neutral">
-          <p>Scoreboard Placeholder</p>
-          <p className="mt-2">Your score: {score}</p>
-        </div>
-      </div>
-    );
-  }
+  const titleCSS =
+    "text-5xl text-neutral text-center transition-transform duration-200 ease-in-out hover:scale-110";
 
   return (
-    <div className={centerCSS}>
-      <div className="text-lg font-semibold text-red-600 mb-2">
-        Time Left: {timeLeft}s
+    <div className={centerContainerCSS}>
+      <h1 className={titleCSS}>
+        This is <span className="italic text-accent font-bold">THE QUIZ!</span>
+      </h1>
+      <p className="text-neutral text-xl">
+        Gather your friends and compete in quizzes!
+      </p>
+
+      <div className="flex gap-10">
+        <Button onClick={handleCreateQuiz}>Create Quiz</Button>
+        <Button onClick={handleJoinQuiz}>Join Quiz</Button>
       </div>
-      <QuizCard
-        question={questions[questionNumber - 1]}
-        selectedOption={selectedOption}
-        isLockedIn={isLockedIn}
-        onSelect={handleSelect}
-        onLockIn={handleLockIn}
-        onNext={handleNext}
-        score={score}
-        totalQuestions={questions.length}
-        questionNumber={questionNumber}
-      />
     </div>
   );
 }

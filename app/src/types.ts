@@ -34,3 +34,25 @@ export type QueueItemData = {
   voteCount: number;
   votes: Record<string, boolean>;
 };
+
+export type Question = {
+  question: string;
+  options: string[];
+  answer: string;
+};
+
+export type QuizData = Question[];
+
+export type QuizSessionData = {
+  hostUserId: string;
+  participants: Record<string, boolean>;
+  createdAt: number;
+  started: boolean;
+  isrcs?: Record<string, string[]>;
+  questions?: Question[];
+  isGeneratingQuestions?: boolean;
+  currentQuestionIndex?: number;
+  currentQuestionAnswers?: Record<string, string>;
+  scores?: Record<string, number>;
+  isQuizOver?: boolean;
+};
