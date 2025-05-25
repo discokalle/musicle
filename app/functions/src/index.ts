@@ -34,3 +34,5 @@ export const getQuizState = quiz.getQuizState;
 export const setParticipantIsrc = quiz.setParticipantIsrc;
 export const storeQuizQuestions = quiz.storeQuizQuestions;
 export const setGeneratingQuestionsStatus = quiz.setGeneratingQuestionsStatus;
+export const submitQuizAnswer = quiz.submitQuizAnswer;
+export const advanceQuizQuestion = quiz.advanceQuizQuestion;

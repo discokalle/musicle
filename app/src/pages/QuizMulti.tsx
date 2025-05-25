@@ -1,5 +1,3 @@
-//Will create a similar style for creating and joining multi quizes like the code below (ripped from Queue.tsx):
-
 import Button from "../components/Button";
 
 import { useLocation, useNavigate } from "react-router";
@@ -26,13 +24,10 @@ function QuizMulti() {
   useEffect(() => {
     setIsLoading(true);
 
-    // handles alert passed from QuizSession (e.g., to alert the user that
-    // the host ended the session)
     if (location.state?.message) {
-      // alert w/ small delay to allow re-navigation to complete
       const timerId = setTimeout(() => {
         alert(location.state.message);
-        navigate(location.pathname, { replace: true, state: {} }); // reset state to avoid re-alerting
+        navigate(location.pathname, { replace: true, state: {} });
       }, 50);
 
       return () => clearTimeout(timerId);
@@ -66,7 +61,6 @@ function QuizMulti() {
       }
 
       const quizId = res.data.quizId;
-      // alert("Quiz session created successfully!");
       navigate(quizId);
     } catch (e: any) {
       console.log(e.code, e.message);

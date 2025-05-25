@@ -25,7 +25,8 @@ function QuizCard({
   totalQuestions,
   questionNumber,
 }: Props) {
-  const cardCSS = "p-4 rounded max-w-md mx-auto mt-8 bg-secondary";
+  const cardCSS =
+    "p-4 rounded mx-auto mt-8 bg-secondary flex flex-col h-[32rem] w-[50rem]";
   const scoreCSS = "text-neutral text-right mb-2 font-semibold";
   const questionCSS = "text-neutral text-lg font-bold mb-4";
   const wrapperCSS = "flex flex-col gap-2";

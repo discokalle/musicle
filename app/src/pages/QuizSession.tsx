@@ -1,21 +1,28 @@
 import Button from "../components/Button";
+import QuizCard from "../components/QuizCard";
 import { TrackData, Question } from "../types";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "../firebase";
 import { getInfoByISRC } from "../song-info";
 import { generateQuestions } from "../question-generator";
 
+//Cloud state of the quiz
 const getQuizState = httpsCallable<
   { quizId: string },
   {
     participants: string[];
+    usernames: Record<string, string>;
     started: boolean;
     isrcs?: Record<string, string[]>;
     hostUserId: string;
     questions?: Question[];
     isGeneratingQuestions?: boolean;
+    currentQuestionIndex?: number;
+    currentQuestionAnswers?: Record<string, string>;
+    scores?: Record<string, number>;
+    isQuizOver?: boolean;
   }
 >(functions, "getQuizState");
 
@@ -49,10 +56,23 @@ const getTopTracks = httpsCallable<
   { topTracks: TrackData[] }
 >(functions, "getTopTracks");
 
+const submitQuizAnswer = httpsCallable<
+  { quizId: string; questionIndex: number; selectedOption: string },
+  { success: boolean; isCorrect: boolean }
+>(functions, "submitQuizAnswer");
+
+const advanceQuizQuestion = httpsCallable<
+  { quizId: string; newQuestionIndex: number },
+  { success: boolean }
+>(functions, "advanceQuizQuestion");
+
+//Main part of the quiz session
 function QuizSession() {
+  //State variables for managing quiz data
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
-  const [participants, setParticipants] = useState<string[]>([]);
+  const [participantIds, setParticipantIds] = useState<string[]>([]);
+  const [usernames, setUsernames] = useState<Record<string, string>>({});
   const [started, setStarted] = useState(false);
   const [rawParticipantIsrcs, setRawParticipantIsrcs] = useState<
     Record<string, string[]>
@@ -67,29 +87,62 @@ function QuizSession() {
   const [areQuestionsGenerated, setAreQuestionsGenerated] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<string | undefined>(
+    undefined
+  );
+  const [isLockedIn, setIsLockedIn] = useState(false);
+  const [userScore, setUserScore] = useState(0);
+  const [allScores, setAllScores] = useState<Record<string, number>>({});
+  const [isShowingScores, setIsShowingScores] = useState(false);
+  const [usersAnswered, setUsersAnswered] = useState<string[]>([]);
+  const [isQuizOver, setIsQuizOver] = useState(false);
+
+  //Refs for stable state values in effects that dont need displaying.
+  const currentQuestionRef = useRef<number>(0);
+  const isShowingScoresRef = useRef<boolean>(false);
+
+  //Initial data fetch and setup
   useEffect(() => {
     if (!quizId || started || initialized) return;
 
     const initialize = async () => {
       try {
         const res = await getQuizState({ quizId });
-        const currentParticipants = res.data.participants;
+        const fetchedParticipantIds = res.data.participants;
+        const fetchedUsernames = res.data.usernames || {};
         const isrcMapFromDb = res.data.isrcs || {};
         const hostId = res.data.hostUserId;
         const fetchedQuestions = res.data.questions || [];
         const isGeneratingStatus = res.data.isGeneratingQuestions || false;
+        const fetchedCurrentQuestionIndex = res.data.currentQuestionIndex ?? 0;
+        const fetchedScores = res.data.scores || {};
+        const fetchedCurrentQuestionAnswers =
+          res.data.currentQuestionAnswers || {};
+        const fetchedIsQuizOver = res.data.isQuizOver ?? false;
 
-        setParticipants(currentParticipants);
+        setParticipantIds(fetchedParticipantIds);
+        setUsernames(fetchedUsernames);
         setRawParticipantIsrcs(isrcMapFromDb);
         setIsHost(auth.currentUser?.uid === hostId);
         setQuizQuestions(fetchedQuestions);
         setIsGenerating(isGeneratingStatus);
+        setCurrentQuestionIndex(fetchedCurrentQuestionIndex);
+        currentQuestionRef.current = fetchedCurrentQuestionIndex;
+        setUserScore(fetchedScores[auth.currentUser?.uid || ""] || 0);
+        setAllScores(fetchedScores);
+        setUsersAnswered(Object.keys(fetchedCurrentQuestionAnswers));
+        setIsQuizOver(fetchedIsQuizOver);
 
         if (fetchedQuestions.length > 0) {
           setAreQuestionsGenerated(true);
         }
+        if (res.data.started) {
+          setStarted(true);
+        }
 
-        const missing = currentParticipants.filter(
+        //Fetch missing participant song data
+        const missing = fetchedParticipantIds.filter(
           (uid) => !isrcMapFromDb[uid]
         );
 
@@ -115,7 +168,8 @@ function QuizSession() {
                   const isrcs = randomTracks.map((t) => t.isrc || "No ISRC");
                   await setParticipantIsrc({ quizId, userId, isrcs });
                 }
-              } catch {
+              } catch (e) {
+                console.error(`Error fetching tracks for ${userId}:`, e);
                 await setParticipantIsrc({
                   quizId,
                   userId,
@@ -135,6 +189,7 @@ function QuizSession() {
     initialize();
   }, [quizId, started, initialized]);
 
+  //Adjust participant song map
   useEffect(() => {
     if (rawParticipantIsrcs) {
       const trimmedMap: Record<string, string[]> = {};
@@ -147,59 +202,162 @@ function QuizSession() {
     }
   }, [rawParticipantIsrcs, numSongsPerParticipant, participantIsrcMap]);
 
-  useEffect(() => {
-    if (started && quizQuestions.length > 0) {
-      console.log("Quiz started and questions are available!");
-    } else if (started && quizQuestions.length === 0) {
-      console.log("Quiz started but no questions available yet.");
-    }
-  }, [started, quizQuestions]);
-
+  //Polling for real-time quiz state updates
   useEffect(() => {
     if (!quizId) return;
+
+    const POLLING_INTERVAL = 500; //Poll every 500ms
 
     const interval = setInterval(async () => {
       try {
         const res = await getQuizState({ quizId });
-        setParticipants(res.data.participants);
-        setStarted(res.data.started);
-        setIsHost(auth.currentUser?.uid === res.data.hostUserId);
-        setRawParticipantIsrcs(res.data.isrcs || {});
+        const newParticipantIds = res.data.participants;
+        const newStartedStatus = res.data.started;
+        const newIsHost = auth.currentUser?.uid === res.data.hostUserId;
+        const newRawParticipantIsrcs = res.data.isrcs || {};
         const fetchedQuestions = res.data.questions || [];
         const isGeneratingStatus = res.data.isGeneratingQuestions || false;
+        const fetchedCurrentQuestionIndex = res.data.currentQuestionIndex ?? 0;
+        const fetchedScores = res.data.scores || {};
+        const fetchedCurrentQuestionAnswers =
+          res.data.currentQuestionAnswers || {};
+        const fetchedIsQuizOver = res.data.isQuizOver ?? false;
+        const fetchedUsernames = res.data.usernames || {};
 
+        setParticipantIds(newParticipantIds);
+        setUsernames(fetchedUsernames);
+        setStarted(newStartedStatus);
+        setIsHost(newIsHost);
+        setRawParticipantIsrcs(newRawParticipantIsrcs);
         setIsGenerating(isGeneratingStatus);
+        setUserScore(fetchedScores[auth.currentUser?.uid || ""] || 0);
+        setAllScores(fetchedScores);
+        setIsQuizOver(fetchedIsQuizOver);
 
-        if (
-          fetchedQuestions.length > 0 &&
-          JSON.stringify(fetchedQuestions) !== JSON.stringify(quizQuestions)
-        ) {
-          setQuizQuestions(fetchedQuestions);
-          setAreQuestionsGenerated(true);
-        } else if (fetchedQuestions.length === 0) {
+        if (fetchedIsQuizOver) {
+          setStarted(false);
+          return;
+        }
+
+        if (newStartedStatus && fetchedQuestions.length > 0) {
+          if (
+            JSON.stringify(fetchedQuestions) !== JSON.stringify(quizQuestions)
+          ) {
+            setQuizQuestions(fetchedQuestions);
+            setAreQuestionsGenerated(true);
+          }
+
+          if (fetchedCurrentQuestionIndex !== currentQuestionRef.current) {
+            currentQuestionRef.current = fetchedCurrentQuestionIndex;
+            setCurrentQuestionIndex(fetchedCurrentQuestionIndex);
+            setSelectedOption(undefined);
+            setIsLockedIn(false);
+            setIsShowingScores(false);
+            isShowingScoresRef.current = false;
+            setUsersAnswered(Object.keys(fetchedCurrentQuestionAnswers));
+            console.log("Question advanced to:", fetchedCurrentQuestionIndex);
+          } else {
+            setUsersAnswered(Object.keys(fetchedCurrentQuestionAnswers));
+          }
+
+          //Check if all answers are in to show scores
+          if (
+            !isShowingScoresRef.current &&
+            fetchedQuestions.length > 0 &&
+            fetchedCurrentQuestionIndex < fetchedQuestions.length &&
+            Object.keys(fetchedCurrentQuestionAnswers).length ===
+              newParticipantIds.length &&
+            Object.keys(fetchedCurrentQuestionAnswers).length > 0 &&
+            Object.keys(fetchedScores).every((uid) =>
+              newParticipantIds.includes(uid)
+            )
+          ) {
+            console.log("All participants answered, showing scores...");
+            setIsShowingScores(true);
+            isShowingScoresRef.current = true;
+          }
+        } else if (!newStartedStatus && fetchedQuestions.length === 0) {
           setAreQuestionsGenerated(false);
         }
       } catch (e) {
         console.error("Polling failed:", e);
+        //Handle quiz session termination by host
+        if (
+          e &&
+          typeof e === "object" &&
+          "code" in e &&
+          (e as any).code === "not-found"
+        ) {
+          alert("The host has ended the quiz session.");
+          navigate("/quiz/multi", {
+            state: { message: "The host has ended the quiz session." },
+          });
+        }
       }
-    }, 3000);
+    }, POLLING_INTERVAL);
 
+    //Cleanup
     return () => clearInterval(interval);
-  }, [quizId, quizQuestions]);
+  }, [quizId, quizQuestions, participantIds, navigate, usernames]);
 
+  //Handler for user selecting an answer option
+  const handleOptionSelect = (option: string) => {
+    if (!isLockedIn) {
+      setSelectedOption(option);
+    }
+  };
+
+  //Handler for user locking in their answer
+  const handleLockIn = async () => {
+    if (
+      !selectedOption ||
+      isLockedIn ||
+      !quizId ||
+      auth.currentUser?.uid === null
+    )
+      return;
+
+    setIsLockedIn(true);
+    try {
+      const res = await submitQuizAnswer({
+        quizId,
+        questionIndex: currentQuestionIndex,
+        selectedOption: selectedOption,
+      });
+      if (res.data.success) {
+        console.log("Answer submitted and scored.");
+      } else {
+        console.error("Failed to submit answer.");
+      }
+    } catch (e: any) {
+      console.error("Error submitting answer:", e);
+      setIsLockedIn(false);
+    }
+  };
+
+  //Host-only handler to advance to the next question
+  const handleNextQuestion = async () => {
+    if (!quizId || !isHost) return;
+
+    const nextIndex = currentQuestionIndex + 1;
+    try {
+      await advanceQuizQuestion({ quizId, newQuestionIndex: nextIndex });
+    } catch (e: any) {
+      console.error("Error advancing question:", e);
+      alert("Failed to advance question.");
+    }
+  };
+
+  //Host-only function to generate and store quiz questions
   const generateAndStoreAllQuestions = async () => {
-    await setGeneratingQuestionsStatus({ quizId: quizId!, status: true });
-    setIsGenerating(true);
-
     const allGeneratedQuestions: Question[] = [];
 
     if (Object.keys(participantIsrcMap).length === 0) {
       console.warn("No participant ISRCs available to generate questions.");
-      await setGeneratingQuestionsStatus({ quizId: quizId!, status: false });
-      setIsGenerating(false);
       return false;
     }
 
+    //Iterate through participants' songs to create questions
     for (const [userId, isrcs] of Object.entries(participantIsrcMap)) {
       for (const isrc of isrcs) {
         try {
@@ -219,6 +377,7 @@ function QuizSession() {
       }
     }
 
+    //Store the generated questions
     if (allGeneratedQuestions.length > 0) {
       try {
         await storeQuizQuestions({
@@ -228,23 +387,18 @@ function QuizSession() {
         setQuizQuestions(allGeneratedQuestions);
         setAreQuestionsGenerated(true);
         console.log("Host successfully stored all quiz questions.");
-        await setGeneratingQuestionsStatus({ quizId: quizId!, status: false });
-        setIsGenerating(false);
         return true;
-      } catch (e) {
+      } catch (e: any) {
         console.error("Host failed to store quiz questions:", e);
-        await setGeneratingQuestionsStatus({ quizId: quizId!, status: false });
-        setIsGenerating(false);
         return false;
       }
     } else {
       console.warn("No questions generated for the quiz.");
-      await setGeneratingQuestionsStatus({ quizId: quizId!, status: false });
-      setIsGenerating(false);
       return false;
     }
   };
 
+  //Host-only handler to start the quiz
   const handleStartQuiz = async () => {
     if (!quizId) return;
 
@@ -258,37 +412,47 @@ function QuizSession() {
       return;
     }
 
-    if (areQuestionsGenerated) {
-      console.log("Questions already generated. Proceeding to start quiz.");
-    } else {
-      const generationSuccess = await generateAndStoreAllQuestions();
-      if (!generationSuccess) {
-        alert(
-          "Failed to generate and store quiz questions. Cannot start quiz."
-        );
-        return;
-      }
-    }
-
     try {
+      //Generate questions if not already available
+      if (!areQuestionsGenerated) {
+        await setGeneratingQuestionsStatus({ quizId: quizId!, status: true });
+        setIsGenerating(true);
+
+        const generationSuccess = await generateAndStoreAllQuestions();
+        await setGeneratingQuestionsStatus({ quizId: quizId!, status: false });
+        setIsGenerating(false);
+
+        if (!generationSuccess) {
+          alert(
+            "Failed to generate and store quiz questions. Cannot start quiz."
+          );
+          return;
+        }
+      }
+
+      //Start the quiz and move to the first question
       const res = await startQuiz({ quizId });
       if (res.data.success) {
         setStarted(true);
+        await advanceQuizQuestion({ quizId, newQuestionIndex: 0 });
       } else {
         alert("Failed to start quiz.");
       }
     } catch (e: any) {
+      console.error("Error starting quiz:", e);
       alert(`Error starting quiz: ${e.message}`);
+      setIsGenerating(false);
     }
   };
 
+  //Host-only handler to end the quiz session
   const handleEndQuiz = async () => {
     if (!quizId) return;
     try {
       const res = await endQuiz({ quizId });
       if (res.data.success) {
         alert("Quiz ended.");
-        navigate("/quiz/multi");
+        navigate("/quiz/multi"); //Redirect to multi-quiz page
       } else {
         alert("Failed to end quiz.");
       }
@@ -297,42 +461,110 @@ function QuizSession() {
     }
   };
 
-  const centerContainerCSS =
+  //Styling
+  const centerCSS =
     "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2";
+  const headingPrimaryCSS = "text-3xl text-neutral";
+  const headingSecondaryCSS = "text-2xl text-neutral mb-2";
+  const listCSS = "text-neutral text-xl";
+  const textNeutralCSS = "text-neutral";
+  const textSmallCSS = "text-sm text-neutral mt-2";
+  const labelCSS = "mt-4 text-neutral";
+  const selectCSS = "bg-secondary";
+  const divMarginTopCSS = "mt-4";
+  const italicTextCSS = "italic text-neutral mt-4";
 
-  const totalPotentialQuestions = participants.length * numSongsPerParticipant;
+  //Calculated values for display
+  const numberOfParticipants = participantIds.length;
+  const totalPotentialQuestions = numberOfParticipants * numSongsPerParticipant;
 
+  //Function to determine quiz winner(s)
+  const getWinners = () => {
+    if (Object.keys(allScores).length === 0) {
+      return [];
+    }
+
+    let maxScore = 0;
+    for (const score of Object.values(allScores)) {
+      if (score > maxScore) {
+        maxScore = score;
+      }
+    }
+
+    const winners: string[] = [];
+    for (const userId in allScores) {
+      if (allScores[userId] === maxScore) {
+        winners.push(usernames[userId] || "Unnamed Participant");
+      }
+    }
+    return winners;
+  };
+
+  const winners = getWinners();
+  const winnerText =
+    winners.length > 1
+      ? `Winners: ${winners.join(" & ")}!`
+      : `Winner: ${winners[0]}!`;
+
+  //Render loading state while questions are generated
   if (isGenerating) {
     return (
-      <div className={centerContainerCSS}>
-        <h1 className="text-3xl text-neutral">
+      <div className={centerCSS}>
+        <h1 className={headingPrimaryCSS}>
           Generating questions, this may take a while...
         </h1>
       </div>
     );
   }
 
+  //Render screen with final scores and winner(s)
+  if (isQuizOver) {
+    return (
+      <div className={centerCSS}>
+        <h1 className={`${headingPrimaryCSS} mb-4`}>
+          Quiz Over! Final Scores:
+        </h1>
+        <ul className={listCSS}>
+          {Object.entries(allScores)
+            .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+            .map(([userId, score]) => (
+              <li key={userId}>
+                {usernames[userId] || "Unnamed Participant"}: {score} points
+              </li>
+            ))}
+        </ul>
+        {winners.length > 0 && (
+          <h2 className={`${headingSecondaryCSS} mt-4`}>{winnerText}</h2>
+        )}
+        {isHost && <Button onClick={handleEndQuiz}>End Quiz Session</Button>}
+      </div>
+    );
+  }
+
+  //MAIN RENDERING of the quiz session
   return (
-    <div className={centerContainerCSS}>
+    <div className={centerCSS}>
       {!started ? (
+        //Lobby view before the quiz starts
         <>
-          <h2 className="text-3xl text-neutral">Participants:</h2>
-          <ul className="text-neutral">
-            {participants.map((uid) => (
-              <li key={uid}>{uid}</li>
+          <h2 className={headingPrimaryCSS}>Participants:</h2>
+          <ul className={listCSS}>
+            {participantIds.map((uid) => (
+              <li key={uid}>{usernames[uid] || "Unnamed Participant"}</li>
             ))}
           </ul>
 
           {isHost && (
+            //Host controls for quiz settings and starting
             <>
-              <label className="mt-4 text-neutral">
+              <label className={labelCSS}>
                 Number of songs per participant:
                 <select
                   value={numSongsPerParticipant}
                   onChange={(e) =>
                     setNumSongsPerParticipant(parseInt(e.target.value))
                   }
-                  className="bg-secondary"
+                  className={selectCSS}
                 >
                   {[1, 2, 3, 4, 5].map((n) => (
                     <option key={n} value={n}>
@@ -343,13 +575,13 @@ function QuizSession() {
               </label>
 
               <Button onClick={handleStartQuiz}>Start Quiz</Button>
-              {participants.length > 0 && !areQuestionsGenerated && (
-                <p className="text-sm text-neutral mt-2">
+              {numberOfParticipants > 0 && !areQuestionsGenerated && (
+                <p className={textSmallCSS}>
                   Ready to generate {totalPotentialQuestions} questions.
                 </p>
               )}
               {areQuestionsGenerated && (
-                <p className="text-sm text-neutral mt-2">
+                <p className={textSmallCSS}>
                   Questions generated and stored ({quizQuestions.length} total).
                 </p>
               )}
@@ -357,32 +589,96 @@ function QuizSession() {
           )}
         </>
       ) : (
+        //In-quiz view once the quiz has started
         <>
-          <h1 className="text-3xl text-neutral">Quiz ID: {quizId}</h1>
-          <h2 className="text-2xl text-neutral mt-4">Quiz Questions:</h2>
-          <ul className="text-neutral mt-2">
-            {quizQuestions.length === 0 ? (
-              <div className="italic text-neutral">
+          <h1 className={headingPrimaryCSS}>Quiz ID: {quizId}</h1>
+
+          {isShowingScores && (
+            //Display scores between questions
+            <div className={divMarginTopCSS}>
+              <h2 className={headingSecondaryCSS}>Current Scores:</h2>
+              <ul className={listCSS}>
+                {Object.entries(allScores)
+                  .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+                  .map(([userId, score]) => (
+                    <li key={userId}>
+                      {usernames[userId] || "Unnamed Participant"}: {score}{" "}
+                      points (
+                      {usersAnswered.includes(userId) ? "Answered" : "Waiting"})
+                    </li>
+                  ))}
+              </ul>
+              {isHost && (
+                <Button
+                  onClick={handleNextQuestion}
+                  className={divMarginTopCSS}
+                >
+                  {currentQuestionIndex + 1 < quizQuestions.length
+                    ? "Next Question"
+                    : "View Final Results"}
+                </Button>
+              )}
+              {!isHost && (
+                <p className={textNeutralCSS}>Waiting for host to advance...</p>
+              )}
+            </div>
+          )}
+
+          {!isShowingScores &&
+          quizQuestions.length > 0 &&
+          currentQuestionIndex < quizQuestions.length ? (
+            //Display the current quiz question card
+            <QuizCard
+              question={quizQuestions[currentQuestionIndex]}
+              selectedOption={selectedOption}
+              isLockedIn={
+                isLockedIn ||
+                usersAnswered.includes(auth.currentUser?.uid || "")
+              }
+              onSelect={handleOptionSelect}
+              onLockIn={handleLockIn}
+              showFeedback={
+                isLockedIn ||
+                usersAnswered.includes(auth.currentUser?.uid || "")
+              }
+              score={userScore}
+              totalQuestions={quizQuestions.length}
+              questionNumber={currentQuestionIndex + 1}
+            />
+          ) : (
+            //Message when no questions are loaded or showing scores
+            !isShowingScores &&
+            quizQuestions.length === 0 && (
+              <div className={italicTextCSS}>
                 Loading or no questions generated for this quiz.
               </div>
-            ) : (
-              quizQuestions.map((q, index) => (
-                <li key={index} className="mb-4">
-                  <div className="font-semibold">
-                    {index + 1}. {q.question}
-                  </div>
-                  <ul className="ml-4 list-disc">
-                    {q.options.map((opt, i) => (
-                      <li key={i}>{opt}</li>
-                    ))}
-                  </ul>
-                  {isHost && (
-                    <div className="text-green-400">Answer: {q.answer}</div>
-                  )}
-                </li>
-              ))
+            )
+          )}
+
+          {/* Waiting for participants to answer */}
+          {!isShowingScores &&
+            !isHost &&
+            started &&
+            quizQuestions.length > 0 &&
+            currentQuestionIndex < quizQuestions.length &&
+            usersAnswered.length < numberOfParticipants && (
+              <p className={textNeutralCSS}>
+                Waiting for others to answer ({usersAnswered.length}/
+                {numberOfParticipants} answered)
+              </p>
             )}
-          </ul>
+
+          {isHost &&
+            !isShowingScores &&
+            started &&
+            quizQuestions.length > 0 &&
+            currentQuestionIndex < quizQuestions.length && (
+              <p className={textNeutralCSS}>
+                Waiting for participants to answer ({usersAnswered.length}/
+                {numberOfParticipants} answered)
+              </p>
+            )}
+
           {isHost && <Button onClick={handleEndQuiz}>End Quiz</Button>}
         </>
       )}

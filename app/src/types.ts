@@ -43,4 +43,8 @@ export type QuizSessionData = {
   isrcs?: Record<string, string[]>;
   questions?: Question[];
   isGeneratingQuestions?: boolean;
+  currentQuestionIndex?: number;
+  currentQuestionAnswers?: Record<string, string>;
+  scores?: Record<string, number>;
+  isQuizOver?: boolean;
 };
