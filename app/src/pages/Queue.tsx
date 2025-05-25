@@ -1,4 +1,5 @@
 import Button from "../components/Button";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import { useLocation, useNavigate } from "react-router";
 import { httpsCallable } from "firebase/functions";
@@ -67,9 +68,10 @@ function Queue() {
 
       const data = res.data as { sessionId: string };
       const sessionId = data.sessionId;
-      // alert("Queue session created successfully!");
+
       navigate(sessionId);
     } catch (e: any) {
+      alert(`Failed to create Queue session: ${e.message}`);
       console.log(e.code, e.message);
     }
   };
@@ -97,7 +99,7 @@ function Queue() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   return (

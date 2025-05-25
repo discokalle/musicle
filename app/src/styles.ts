@@ -13,4 +13,6 @@ export const subtitleCSS = "text-neutral text-2xl whitespace-nowrap";
 export const centerContainerCSS =
   "absolute flex flex-col gap-7 items-center left-1/2 top-[30%] transform -translate-x-1/2";
 
-export const separatorCSS = "w-full h-px bg-neutral opacity-50 my-2";
+export const xSeparatorCSS = "w-full h-px bg-neutral opacity-50 my-2";
+
+export const ySeparatorCSS = "w-px self-stretch bg-neutral opacity-50 mx-2";

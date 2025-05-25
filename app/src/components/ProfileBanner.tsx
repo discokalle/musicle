@@ -13,7 +13,7 @@ import defaultProfilePic from "../assets/default-profile-pic.png";
 
 import { auth, db, storage } from "../firebase";
 
-import { panelCardCSS } from "../styles";
+import { panelCardCSS, ySeparatorCSS } from "../styles";
 
 type Props = {
   userSnapshot: DataSnapshot;
@@ -26,7 +26,6 @@ function ProfileBanner({ userSnapshot }: Props) {
   const [profilePic, setProfilePic] = useState<string>(
     targetUser?.profilePicture || defaultProfilePic
   );
-
   const [isFollowing, setIsFollowing] = useState(
     loggedInUser?.uid && targetUser.followers
       ? targetUser.followers[loggedInUser.uid]
@@ -83,6 +82,22 @@ function ProfileBanner({ userSnapshot }: Props) {
     }
   };
 
+  const queueStats = userSnapshot.val()?.gameStats?.queue;
+  const queueKeyToName: Record<string, string> = {
+    numEnqueuedTracks: "Tracks Enqueued",
+    numHostedSessions: "Sessions Hosted",
+    numParticipatedSessions: "Sessions Participated",
+    numVotes: "Tracks Voted",
+  };
+
+  const quizStats = userSnapshot.val()?.gameStats?.quiz;
+  const quizKeyToName: Record<string, string> = {
+    numEnqueuedTracks: "Tracks Enqueued",
+    numHostedSessions: "Sessions Hosted",
+    numParticipatedSessions: "Sessions Participated",
+    numVotes: "Tracks Voted",
+  };
+
   const usernameCSS = "text-3xl font-bold text-neutral";
   const subtitleCSS = "text-lg text-gray-300";
   const statusSymbolCSS = `${
@@ -91,38 +106,92 @@ function ProfileBanner({ userSnapshot }: Props) {
      border-white transform -translate-x-1/4 -translate-y-1/4 shadow-md/25`;
 
   return (
-    <div className={clsx(panelCardCSS, "relative flex items-center gap-5")}>
-      <div className="w-30 h-30 relative">
-        <img
-          src={profilePic}
-          alt="Profile"
-          className="w-full h-full rounded-md object-cover shadow-md/25"
-        />
-        {loggedInUser?.uid === userSnapshot.key && (
-          <div>
-            <RoundButton
-              onClick={() => document.getElementById("uploadInput")?.click()}
-              className="absolute top-1 right-1"
-              title="Upload profile picture"
-              size="x_small"
-            >
-              ✏️
-            </RoundButton>
-            <input
-              id="uploadInput"
-              type="file"
-              accept="image/*"
-              onChange={handleProfPicUpload}
-              hidden
-            ></input>
-          </div>
-        )}
-        <div className={statusSymbolCSS}></div>
+    <div
+      className={clsx(
+        panelCardCSS,
+        "relative flex items-center justify-between gap-5 pr-10"
+      )}
+    >
+      <div className="flex flex-row gap-5 items-center">
+        <div className="w-30 h-30 relative">
+          <img
+            src={profilePic}
+            alt="Profile"
+            className="w-full h-full rounded-md object-cover shadow-md/25"
+          />
+          {loggedInUser?.uid === userSnapshot.key && (
+            <div>
+              <RoundButton
+                onClick={() => document.getElementById("uploadInput")?.click()}
+                className="absolute top-1 right-1"
+                title="Upload profile picture"
+                size="x_small"
+              >
+                ✏️
+              </RoundButton>
+              <input
+                id="uploadInput"
+                type="file"
+                accept="image/*"
+                onChange={handleProfPicUpload}
+                hidden
+              ></input>
+            </div>
+          )}
+          <div className={statusSymbolCSS}></div>
+        </div>
+        <div>
+          <h1 className={usernameCSS}>{targetUser.username}</h1>
+          <p className={subtitleCSS}>{targetUser.email}</p>
+        </div>
       </div>
-      <div>
-        <h1 className={usernameCSS}>{targetUser.username}</h1>
-        <p className={subtitleCSS}>{targetUser.email}</p>
+      <div className="flex flex-row gap-5">
+        <div>
+          <h3 className="text-md font-semibold text-neutral mb-1">
+            Quiz Stats
+          </h3>
+          {quizStats ? (
+            <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1 text-sm">
+              {Object.entries(quizStats).map(([key, value]) => (
+                <>
+                  <span className="text-gray-400">
+                    {quizKeyToName[key] ?? key}:
+                  </span>
+                  <span className="text-neutral font-medium text-right">
+                    {String(value)}
+                  </span>
+                </>
+              ))}
+            </div>
+          ) : (
+            <div>No stats to show.</div>
+          )}
+        </div>
+        <div className={ySeparatorCSS}></div>
+        {/* class below accounts for follow/unfollow button on other users' pages */}
+        <div className={loggedInUser?.uid !== userSnapshot.key ? "mr-8" : ""}>
+          <h3 className="text-md font-semibold text-neutral mb-1">
+            Queue Stats
+          </h3>
+          {queueStats ? (
+            <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1 text-sm">
+              {Object.entries(queueStats).map(([key, value]) => (
+                <>
+                  <span className="text-gray-400">
+                    {queueKeyToName[key] ?? key}:
+                  </span>
+                  <span className="text-neutral font-medium text-right">
+                    {String(value)}
+                  </span>
+                </>
+              ))}
+            </div>
+          ) : (
+            <div>No stats to show.</div>
+          )}
+        </div>
       </div>
+
       {loggedInUser?.displayName != targetUser.username && (
         <RoundButton
           size="small"

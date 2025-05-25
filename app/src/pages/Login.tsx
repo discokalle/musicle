@@ -6,6 +6,7 @@ import { ref, get, set } from "firebase/database";
 import { auth, db } from "../firebase";
 
 import Button from "../components/Button";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import { centerContainerCSS, titleCSS } from "../styles";
 import clsx from "clsx";
@@ -14,9 +15,11 @@ function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState(""); // note: either username or email
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
+      setIsLoading(true);
       let emailAddr = email;
       try {
         const snapshot = await get(ref(db, `usernames/${email}`));
@@ -28,11 +31,13 @@ function Login() {
         }
       } catch (e: any) {
         alert(`Could not find user ${email}`);
+        setIsLoading(false);
         return;
       }
 
       await signInWithEmailAndPassword(auth, emailAddr, password);
       await set(ref(db, `users/${auth.currentUser?.uid}/isOnline`), true);
+      setIsLoading(false);
       navigate("/home");
     } catch (e: any) {
       if (e.code == AuthErrorCodes.INVALID_LOGIN_CREDENTIALS) {
@@ -40,6 +45,7 @@ function Login() {
       } else {
         alert(`Error: ${e.message}`);
       }
+      setIsLoading(false);
     }
   };
 
@@ -50,6 +56,10 @@ function Login() {
       handleLogin();
     }
   };
+
+  if (isLoading) {
+    return <LoadingAnimation></LoadingAnimation>;
+  }
 
   const inputCSS =
     "text-neutral w-[90%] mx-auto p-2 border border-gray-300 rounded-md\

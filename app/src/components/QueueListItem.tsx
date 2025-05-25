@@ -21,7 +21,6 @@ type Props = {
 };
 
 function QueueListItem({ sessionId, id, data, className }: Props) {
-  // console.log(data);
   const { suggesterUsername, track, voteCount, votes } = data;
 
   const handleVote = async () => {
@@ -34,7 +33,7 @@ function QueueListItem({ sessionId, id, data, className }: Props) {
 
   const containerCSS = `${className} list-group-item bg-secondary rounded-md 
     shadow-md/50 px-4 py-2 hover:text-accent transition duration-250 
-    grid grid-cols-[1fr_1fr_1fr_1fr_auto_auto_auto] items-center gap-5`;
+    grid grid-cols-[0.7fr_1fr_0.7fr_1fr_auto_auto_auto] items-center gap-5`;
 
   return (
     <li className={containerCSS}>

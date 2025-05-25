@@ -1,7 +1,8 @@
 import Button from "../components/Button";
 import ProfileBanner from "../components/ProfileBanner";
+import LoadingAnimation from "../components/LoadingAnimation";
 
-import spotifyLogo from "../assets/spotify-logo-cartoon.png";
+import spotifyLogo from "../assets/spotify-logo.png";
 
 import clsx from "clsx";
 import {
@@ -60,7 +61,7 @@ function ProfileLayout() {
   }, [username]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   if (error || !userSnapshot) {
@@ -101,10 +102,9 @@ function ProfileLayout() {
   };
 
   const subsecs = [
-    ["Overview", `/profile/${username}`],
+    ["Spotify Stats", `/profile/${username}/spotify-stats`],
     ["Followers", `/profile/${username}/followers`],
     ["Following", `/profile/${username}/following`],
-    ["Stats", `/profile/${username}/stats`],
   ];
 
   const containerCSS =
@@ -152,7 +152,7 @@ function ProfileLayout() {
               <img
                 src={spotifyLogo}
                 alt="Spotify Logo"
-                className="h-5 w-auto"
+                className="h-6 w-auto"
               ></img>
             </span>
           </Button>

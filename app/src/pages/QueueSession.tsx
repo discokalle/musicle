@@ -7,6 +7,7 @@ import clsx from "clsx";
 import Button from "../components/Button";
 import SearchBarApi from "../components/SearchBarApi";
 import QueueListItem from "../components/QueueListItem";
+import LoadingAnimation from "../components/LoadingAnimation";
 
 import { auth, db, functions } from "../firebase";
 import TrackListItem from "../components/TrackListItem";
@@ -15,7 +16,7 @@ import { SessionData, TrackData } from "../types";
 import {
   linkHighlightCSS,
   panelCardCSS,
-  separatorCSS,
+  xSeparatorCSS,
   subtitleCSS,
   titleCSS,
 } from "../styles";
@@ -143,15 +144,10 @@ function QueueSession() {
           currEndingTrackUriRef.current = "";
         }
 
-        console.log(
-          "lastplayed",
-          lastPlayedByAppUriRef,
-          "currState",
-          currState.item.uri,
-          "queue",
-          sessionData?.queue
-        );
-
+        // we play the next track in queue if:
+        // - this is the first song to be enqueued
+        // - the current playing song was not enqueued through the app
+        // - the previous song that we played is about to end
         if (
           (((!lastPlayedByAppUriRef.current ||
             currState.item.uri !== lastPlayedByAppUriRef.current) &&
@@ -246,15 +242,15 @@ function QueueSession() {
   }, [sessionId, navigate]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <LoadingAnimation></LoadingAnimation>;
   }
 
   if (error.trim() !== "") {
-    return <div>Error: {error}</div>;
+    return <div className={titleCSS}>Error: {error}</div>;
   }
 
   if (!sessionData || !sessionId) {
-    return <div>Session not found</div>;
+    return <div className={titleCSS}>Session not found</div>;
   }
 
   const handleEndSession = async () => {
@@ -372,7 +368,7 @@ function QueueSession() {
             {sessionId}
           </span>
         </h1>
-        <div className={separatorCSS}></div>
+        <div className={xSeparatorCSS}></div>
         <p className={"text-large text-neutral text-center"}>
           Playing on "{sessionData.deviceName}"
         </p>
