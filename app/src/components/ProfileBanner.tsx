@@ -82,7 +82,7 @@ function ProfileBanner({ userSnapshot }: Props) {
     }
   };
 
-  const queueStats = userSnapshot.val().gameStats.queue;
+  const queueStats = userSnapshot.val()?.gameStats?.queue;
   const queueKeyToName: Record<string, string> = {
     numEnqueuedTracks: "Tracks Enqueued",
     numHostedSessions: "Sessions Hosted",
@@ -90,13 +90,13 @@ function ProfileBanner({ userSnapshot }: Props) {
     numVotes: "Tracks Voted",
   };
 
-  // const quizStats = userSnapshot.val().gameStats.quiz;
-  // const quizKeyToName: Record<string, string> = {
-  //   numEnqueuedTracks: "Tracks Enqueued",
-  //   numHostedSessions: "Sessions Hosted",
-  //   numParticipatedSessions: "Sessions Participated",
-  //   numVotes: "Tracks Voted",
-  // };
+  const quizStats = userSnapshot.val()?.gameStats?.quiz;
+  const quizKeyToName: Record<string, string> = {
+    numEnqueuedTracks: "Tracks Enqueued",
+    numHostedSessions: "Sessions Hosted",
+    numParticipatedSessions: "Sessions Participated",
+    numVotes: "Tracks Voted",
+  };
 
   const usernameCSS = "text-3xl font-bold text-neutral";
   const subtitleCSS = "text-lg text-gray-300";
@@ -150,7 +150,7 @@ function ProfileBanner({ userSnapshot }: Props) {
           <h3 className="text-md font-semibold text-neutral mb-1">
             Quiz Stats
           </h3>
-          {/* {queueStats ? (
+          {quizStats ? (
             <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1 text-sm">
               {Object.entries(quizStats).map(([key, value]) => (
                 <>
@@ -164,11 +164,12 @@ function ProfileBanner({ userSnapshot }: Props) {
               ))}
             </div>
           ) : (
-            <div>{targetUser} has not participated in a Queue Session.</div>
-          )} */}
+            <div>No stats to show.</div>
+          )}
         </div>
         <div className={ySeparatorCSS}></div>
-        <div>
+        {/* class below accounts for follow/unfollow button on other users' pages */}
+        <div className={loggedInUser?.uid !== userSnapshot.key ? "mr-8" : ""}>
           <h3 className="text-md font-semibold text-neutral mb-1">
             Queue Stats
           </h3>
@@ -186,7 +187,7 @@ function ProfileBanner({ userSnapshot }: Props) {
               ))}
             </div>
           ) : (
-            <div>{targetUser} has not participated in a Queue Session.</div>
+            <div>No stats to show.</div>
           )}
         </div>
       </div>

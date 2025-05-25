@@ -16,7 +16,7 @@ import { SessionData, TrackData } from "../types";
 import {
   linkHighlightCSS,
   panelCardCSS,
-  separatorCSS,
+  xSeparatorCSS,
   subtitleCSS,
   titleCSS,
 } from "../styles";
@@ -368,7 +368,7 @@ function QueueSession() {
             {sessionId}
           </span>
         </h1>
-        <div className={separatorCSS}></div>
+        <div className={xSeparatorCSS}></div>
         <p className={"text-large text-neutral text-center"}>
           Playing on "{sessionData.deviceName}"
         </p>
