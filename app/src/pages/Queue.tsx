@@ -109,8 +109,8 @@ function Queue() {
         <span className="italic text-accent font-bold">THE LIVE QUEUE</span>
       </h1>
       <p className={subtitleCSS}>
-        Gather your friends and queue songs fairly with a voting system in
-        real-time!
+        Gather your friends and queue your favorite songs with a fair voting
+        system in real-time!
       </p>
 
       <div className="flex gap-10">

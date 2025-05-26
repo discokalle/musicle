@@ -97,9 +97,15 @@ function QuizMulti() {
   return (
     <div className={centerContainerCSS}>
       <h1 className={titleCSS}>
-        This is <span className="italic text-accent font-bold">THE QUIZ!</span>
+        This is{" "}
+        <span className="italic text-accent font-bold">
+          THE MULTIPLAYER QUIZ!
+        </span>
       </h1>
-      <p className={subtitleCSS}>Gather your friends and compete in quizzes!</p>
+      <p className={subtitleCSS}>
+        Gather your friends and compete in quizzes tailored to everyone's music
+        taste!
+      </p>
 
       <div className="flex gap-10">
         <Button onClick={handleCreateQuiz} size="large">

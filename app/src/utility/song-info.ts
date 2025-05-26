@@ -27,12 +27,12 @@ export async function getInfoByISRC(isrc: string): Promise<SongInfo | null> {
   const songInfo = await tryFetchISRCInfo(isrc);
   if (songInfo) return songInfo;
 
-  console.log(`Original ISRC '${isrc}' failed. Attempting random fallback...`);
+  // console.log(`Original ISRC '${isrc}' failed. Attempting random fallback...`);
 
   //Pick one random fallback ISRC from the array
   const fallback =
     FALLBACK_ISRCS[Math.floor(Math.random() * FALLBACK_ISRCS.length)];
-  console.log(`Trying fallback ISRC: ${fallback}`);
+  // console.log(`Trying fallback ISRC: ${fallback}`);
 
   const fallbackInfo = await tryFetchISRCInfo(fallback);
   if (fallbackInfo) return fallbackInfo;
@@ -53,17 +53,17 @@ async function tryFetchISRCInfo(isrc: string): Promise<SongInfo | null> {
     );
 
     if (!res.ok) {
-      console.error(
-        `MusicBrainz API recording lookup failed for ISRC ${isrc}: ${res.status} ${res.statusText}`
-      );
+      // console.error(
+      //   `MusicBrainz API recording lookup failed for ISRC ${isrc}: ${res.status} ${res.statusText}`
+      // );
       return null;
     }
     data = await res.json();
   } catch (error) {
-    console.error(
-      `Network or parsing error for recording ISRC ${isrc}:`,
-      error
-    );
+    // console.error(
+    //   `Network or parsing error for recording ISRC ${isrc}:`,
+    //   error
+    // );
     return null;
   }
 
@@ -118,7 +118,7 @@ async function tryFetchISRCInfo(isrc: string): Promise<SongInfo | null> {
   try {
     artistDetails = await fetchArtistInfoById(artistId);
   } catch (error) {
-    console.error(`Error fetching artist details for ID ${artistId}:`, error);
+    // console.error(`Error fetching artist details for ID ${artistId}:`, error);
     artistDetails = {};
   }
 
@@ -145,14 +145,14 @@ async function fetchArtistInfoById(artistId: string): Promise<{
     );
 
     if (!res.ok) {
-      console.error(
-        `MusicBrainz API artist lookup failed for ID ${artistId}: ${res.status} ${res.statusText}`
-      );
+      // console.error(
+      //   `MusicBrainz API artist lookup failed for ID ${artistId}: ${res.status} ${res.statusText}`
+      // );
       return {};
     }
     data = await res.json();
   } catch (error) {
-    console.error(`Network or parsing error for artist ID ${artistId}:`, error);
+    // console.error(`Network or parsing error for artist ID ${artistId}:`, error);
     return {};
   }
 

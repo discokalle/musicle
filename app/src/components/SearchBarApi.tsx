@@ -39,7 +39,6 @@ function SearchBarApi({
 
     const fetchRecs = async (prefix: string) => {
       try {
-        // console.log(prefix);
         const res = await apiCall(prefix);
 
         if (isCancelled) return;
@@ -50,7 +49,6 @@ function SearchBarApi({
         setShowRecs(results.length > 0); // shows recs if there were any results
       } catch (e: any) {
         if (isCancelled) return;
-        // alert(`Fetching error: ${e.message}`);
         console.log(`Fetching error: ${e.message}`);
         setRecs([]);
         setShowRecs(false);

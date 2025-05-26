@@ -4,14 +4,19 @@ import { httpsCallable } from "firebase/functions";
 
 import { auth, functions } from "../firebase";
 
+import LoadingAnimation from "../components/LoadingAnimation";
+
+const exchangeSpotifyCode = httpsCallable<
+  { code: string },
+  { success: boolean; message: string }
+>(functions, "exchangeSpotifyCode");
+
 function SpotifyCallback() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const hasHandledCallback = useRef(false); // to only have the effect run once
-
-  const exchangeSpotifyCode = httpsCallable(functions, "exchangeSpotifyCode");
 
   useEffect(() => {
     const cleanup = (errorMsg: string) => {
@@ -68,14 +73,14 @@ function SpotifyCallback() {
   }, [searchParams, navigate, exchangeSpotifyCode]);
 
   if (isLoading) {
-    return <div>Connecting Spotify account...</div>;
+    return <LoadingAnimation message="Connecting Spotify account..." />;
   }
 
   if (error) {
     alert(`Error: ${error}`);
   }
 
-  return <div>Redirecting...</div>;
+  return <LoadingAnimation message="Redirecting..." />;
 }
 
 export default SpotifyCallback;

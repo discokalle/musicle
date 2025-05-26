@@ -20,6 +20,7 @@ import { auth, db } from "../firebase";
 
 import { linkHighlightCSS, panelCardCSS } from "../styles";
 
+// Spotify variables, and the scope (i.e., the data that we request from the user)
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 const VITE_SPOTIFY_REDIRECT_URI = import.meta.env.VITE_SPOTIFY_REDIRECT_URI;
 const SPOTIFY_SCOPES =

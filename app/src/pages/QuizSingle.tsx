@@ -7,6 +7,9 @@ import { generateQuestions } from "../utility/question-generator";
 import LoadingAnimation from "../components/LoadingAnimation";
 import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "../firebase";
+import { subtitleCSS, titleCSS } from "../styles";
+import { Link } from "react-router";
+import clsx from "clsx";
 
 const getTopTracksCallable = httpsCallable<
   { userId: string; timeRange: string },
@@ -40,7 +43,7 @@ function QuizSingle() {
       const userId = auth.currentUser?.uid;
 
       if (!userId) {
-        console.error("User not logged in. Cannot fetch top tracks.");
+        // console.error("User not logged in. Cannot fetch top tracks.");
         setIsLoading(false);
         return;
       }
@@ -63,7 +66,7 @@ function QuizSingle() {
         setIsrcsFromTopTracks(extractedIsrcs);
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching top tracks:", error);
+        // console.error("Error fetching top tracks:", error);
         setIsLoading(false);
       }
     }
@@ -95,7 +98,7 @@ function QuizSingle() {
           finalQuestions.push(...picked);
         }
       } catch (error) {
-        console.error(`Error generating questions for ISRC ${isrc}:`, error);
+        // console.error(`Error generating questions for ISRC ${isrc}:`, error);
       }
     }
 
@@ -129,10 +132,7 @@ function QuizSingle() {
   }
 
   const centerCSS =
-    "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2";
-
-  const labelCSS = "mt-4 text-neutral";
-  const selectCSS = "bg-secondary";
+    "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 gap-8";
 
   if (!quizStarted) {
     if (isLoading) {
@@ -144,13 +144,13 @@ function QuizSingle() {
     }
     return (
       <div className={centerCSS}>
-        <h2 className="text-3xl text-neutral mb-4">Choose Number of Songs</h2>
-        <label className={labelCSS}>
-          Number of songs for the quiz:
+        <h2 className={titleCSS}>Choose Number of Songs</h2>
+        <label className={subtitleCSS}>
+          Number of songs for the quiz:{" "}
           <select
             value={numSongsToUse}
             onChange={(e) => setNumSongsToUse(parseInt(e.target.value))}
-            className={selectCSS}
+            className="bg-secondary rounded-md"
           >
             {[1, 2, 3, 4, 5].map((n) => (
               <option key={n} value={n}>
@@ -160,7 +160,9 @@ function QuizSingle() {
           </select>
         </label>
         {isrcsFromTopTracks.length > 0 && (
-          <Button onClick={handleStartQuiz}>Start Quiz</Button>
+          <Button onClick={handleStartQuiz} size="large">
+            Start Quiz
+          </Button>
         )}
         {isrcsFromTopTracks.length === 0 && !isLoading && (
           <p className="text-neutral">No songs available for selection.</p>
@@ -172,7 +174,7 @@ function QuizSingle() {
   if (isLoading) {
     return (
       <div className={centerCSS}>
-        <LoadingAnimation></LoadingAnimation>
+        <LoadingAnimation message="Taking your music taste into account..."></LoadingAnimation>
       </div>
     );
   }
@@ -180,9 +182,13 @@ function QuizSingle() {
   if (questionNumber > questions.length) {
     return (
       <div className={centerCSS}>
-        <div className="text-center text-xl font-semibold text-neutral">
-          Quiz Complete! Your score: {score} / {questions.length}
-        </div>
+        <h1 className={clsx(titleCSS, "font-bold")}>Quiz Complete!</h1>
+        <h2 className={subtitleCSS}>
+          Your score: {score} / {questions.length}
+        </h2>
+        <Link to="/quiz">
+          <Button size="large">Play again</Button>
+        </Link>
       </div>
     );
   }

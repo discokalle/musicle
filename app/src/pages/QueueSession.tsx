@@ -107,7 +107,7 @@ function QueueSession() {
           });
         }
       } catch (error) {
-        console.error("Failed to update current track:", error);
+        // console.error("Failed to update current track:", error);
       }
     },
     [sessionId]
@@ -165,7 +165,7 @@ function QueueSession() {
           lastPlayedByAppUriRef.current = resTrack.data.playedTrackData.uri;
         }
       } catch (e: any) {
-        console.log(e.message);
+        // console.log(e.message);
       }
     };
 
@@ -284,7 +284,7 @@ function QueueSession() {
     try {
       await addTrackToQueue({ sessionId, trackData: recTrackData });
     } catch (e: any) {
-      console.log(`An error occurred during the match logic: ${e.message}`);
+      // console.log(`An error occurred during the match logic: ${e.message}`);
     }
   };
 
@@ -323,7 +323,7 @@ function QueueSession() {
         deviceName: name,
       });
     } catch (e: any) {
-      console.log(e.message);
+      // console.log(e.message);
     }
 
     setIsLoading(false);
