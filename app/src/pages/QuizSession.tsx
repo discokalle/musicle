@@ -2,12 +2,22 @@ import Button from "../components/Button";
 import QuizCard from "../components/QuizCard";
 import { TrackData, Question } from "../types";
 import { useEffect, useState, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, Link } from "react-router";
 import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "../firebase";
 import { getInfoByISRC } from "../utility/song-info";
 import { generateQuestions } from "../utility/question-generator";
 import LoadingAnimation from "../components/LoadingAnimation";
+import {
+  centerContainerCSS,
+  linkHighlightCSS,
+  panelCardCSS,
+  subtitleCSS,
+  titleCSS,
+  xSeparatorCSS,
+  ySeparatorCSS,
+} from "../styles";
+import clsx from "clsx";
 
 //Cloud state of the quiz
 const getQuizState = httpsCallable<
@@ -81,7 +91,7 @@ function QuizSession() {
   const [participantIsrcMap, setParticipantIsrcMap] = useState<
     Record<string, string[]>
   >({});
-  const [numSongsPerParticipant, setNumSongsPerParticipant] = useState(4);
+  const [numSongsPerParticipant, setNumSongsPerParticipant] = useState(3);
   const [initialized, setInitialized] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<Question[]>([]);
   const [isHost, setIsHost] = useState(false);
@@ -462,16 +472,20 @@ function QuizSession() {
     }
   };
 
+  const handleCopyQuizId = async () => {
+    if (!quizId) return;
+
+    try {
+      await navigator.clipboard.writeText(quizId);
+      alert("Successfully copied quiz ID.");
+    } catch (e: any) {
+      alert("Failed to copy quiz ID.");
+    }
+  };
+
   //Styling
-  const centerCSS =
-    "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2";
-  const headingPrimaryCSS = "text-3xl text-neutral";
-  const headingSecondaryCSS = "text-2xl text-neutral mb-2";
   const listCSS = "text-neutral text-xl";
-  const textNeutralCSS = "text-neutral";
-  const textSmallCSS = "text-sm text-neutral mt-2";
-  const labelCSS = "mt-4 text-neutral";
-  const selectCSS = "bg-secondary";
+  const textSmallCSS = "text-lg text-neutral mt-2";
   const divMarginTopCSS = "mt-4";
   const italicTextCSS = "italic text-neutral mt-4";
 
@@ -510,7 +524,7 @@ function QuizSession() {
   //Render loading state while questions are generated
   if (isGenerating) {
     return (
-      <div className={centerCSS}>
+      <div className={centerContainerCSS}>
         <LoadingAnimation message="Generating questions, this may take a while..."></LoadingAnimation>
       </div>
     );
@@ -519,84 +533,116 @@ function QuizSession() {
   //Render screen with final scores and winner(s)
   if (isQuizOver) {
     return (
-      <div className={centerCSS}>
-        <h1 className={`${headingPrimaryCSS} mb-4`}>
-          Quiz Over! Final Scores:
-        </h1>
-        <ul className={listCSS}>
-          {Object.entries(allScores)
-            .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
-            .map(([userId, score]) => (
-              <li key={userId}>
-                {usernames[userId] || "Unnamed Participant"}: {score} points
-              </li>
-            ))}
-        </ul>
+      <div className={centerContainerCSS}>
+        <h1 className={`${titleCSS} font-bold`}>Quiz Over!</h1>
+        <div className="flex flex-col gap-2 items-left">
+          <h2 className={clsx(subtitleCSS, "!text-4xl")}>Final Scores:</h2>
+          <ul className={listCSS}>
+            {Object.entries(allScores)
+              .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
+              .map(([userId, score]) => (
+                <li key={userId}>
+                  {usernames[userId] || "Unnamed Participant"}: {score} points
+                </li>
+              ))}
+          </ul>
+        </div>
         {winners.length > 0 && (
-          <h2 className={`${headingSecondaryCSS} mt-4`}>{winnerText}</h2>
+          <h2 className={`${subtitleCSS}`}>{winnerText}</h2>
         )}
-        {isHost && <Button onClick={handleEndQuiz}>End Quiz Session</Button>}
+        {isHost ? (
+          <Button onClick={handleEndQuiz} size="large">
+            End Quiz Session
+          </Button>
+        ) : (
+          <Link to="/quiz">
+            <Button size="large">Play again</Button>
+          </Link>
+        )}
       </div>
     );
   }
 
   //MAIN RENDERING of the quiz session
   return (
-    <div className={centerCSS}>
+    <div className={clsx(centerContainerCSS, "!top-[15%]")}>
       {!started ? (
         //Lobby view before the quiz starts
-        <>
-          <h2 className={headingPrimaryCSS}>Participants:</h2>
-          <ul className={listCSS}>
-            {participantIds.map((uid) => (
-              <li key={uid}>{usernames[uid] || "Unnamed Participant"}</li>
-            ))}
-          </ul>
-
-          {isHost && (
-            //Host controls for quiz settings and starting
-            <>
-              <label className={labelCSS}>
-                Number of songs per participant:
-                <select
-                  value={numSongsPerParticipant}
-                  onChange={(e) =>
-                    setNumSongsPerParticipant(parseInt(e.target.value))
-                  }
-                  className={selectCSS}
-                >
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <Button onClick={handleStartQuiz}>Start Quiz</Button>
-              {numberOfParticipants > 0 && !areQuestionsGenerated && (
-                <p className={textSmallCSS}>
-                  Ready to generate {totalPotentialQuestions} questions.
-                </p>
-              )}
-              {areQuestionsGenerated && (
-                <p className={textSmallCSS}>
-                  Questions generated and stored ({quizQuestions.length} total).
-                </p>
-              )}
-            </>
-          )}
-        </>
+        <div className="flex flex-row gap-10">
+          <div className={clsx("flex flex-col gap-5 px-5", panelCardCSS)}>
+            <h1 className={clsx(subtitleCSS, "!text-4xl")}>
+              Session ID:
+              <>&nbsp;&nbsp;</>
+              <span
+                className={clsx(linkHighlightCSS, "italic font-bold")}
+                onClick={handleCopyQuizId}
+                title="Copy quiz ID?"
+              >
+                {quizId}
+              </span>
+            </h1>
+            {isHost ? (
+              //Host controls for quiz settings and starting
+              <>
+                <div className="flex flex-row align-center justify-between">
+                  <label className={subtitleCSS}>
+                    Number of songs per participant:{" "}
+                    <select
+                      value={numSongsPerParticipant}
+                      onChange={(e) =>
+                        setNumSongsPerParticipant(parseInt(e.target.value))
+                      }
+                      className="bg-primary rounded-md"
+                    >
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Button onClick={handleStartQuiz} className="!bg-primary">
+                    Start Quiz
+                  </Button>
+                </div>
+                {numberOfParticipants > 0 && !areQuestionsGenerated && (
+                  <p className={textSmallCSS}>
+                    Ready to generate {totalPotentialQuestions} questions.
+                  </p>
+                )}
+                {areQuestionsGenerated && (
+                  <p className={textSmallCSS}>
+                    Questions generated and stored ({quizQuestions.length}{" "}
+                    total).
+                  </p>
+                )}
+              </>
+            ) : (
+              <div className={subtitleCSS}>
+                Waiting for host to start the quiz...
+              </div>
+            )}
+          </div>
+          <div className={ySeparatorCSS}></div>
+          <div className={clsx("flex flex-col !px-5", panelCardCSS)}>
+            <h2 className={clsx(subtitleCSS, "font-bold")}>Participants:</h2>
+            <ul className={listCSS}>
+              {participantIds.map((uid) => (
+                <li key={uid}>{usernames[uid] || "Unnamed Participant"}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
       ) : (
         //In-quiz view once the quiz has started
-        <>
-          <h1 className={headingPrimaryCSS}>Quiz ID: {quizId}</h1>
-
+        <div>
           {isShowingScores && (
             //Display scores between questions
-            <div className={divMarginTopCSS}>
-              <h2 className={headingSecondaryCSS}>Current Scores:</h2>
-              <ul className={listCSS}>
+            <div className={clsx(divMarginTopCSS, "flex flex-col gap-2")}>
+              <h2 className={clsx(subtitleCSS, "font-bold")}>
+                Current Scores:
+              </h2>
+              <ul className={clsx(listCSS, "flex flex-col gap-1")}>
                 {Object.entries(allScores)
                   .sort(([, scoreA], [, scoreB]) => scoreB - scoreA)
                   .map(([userId, score]) => (
@@ -607,6 +653,7 @@ function QuizSession() {
                     </li>
                   ))}
               </ul>
+              <div className={xSeparatorCSS}></div>
               {isHost && (
                 <Button
                   onClick={handleNextQuestion}
@@ -618,7 +665,7 @@ function QuizSession() {
                 </Button>
               )}
               {!isHost && (
-                <p className={textNeutralCSS}>Waiting for host to advance...</p>
+                <p className={textSmallCSS}>Waiting for host to advance...</p>
               )}
             </div>
           )}
@@ -661,7 +708,7 @@ function QuizSession() {
             quizQuestions.length > 0 &&
             currentQuestionIndex < quizQuestions.length &&
             usersAnswered.length < numberOfParticipants && (
-              <p className={textNeutralCSS}>
+              <p className={textSmallCSS}>
                 Waiting for others to answer ({usersAnswered.length}/
                 {numberOfParticipants} answered)
               </p>
@@ -672,15 +719,14 @@ function QuizSession() {
             started &&
             quizQuestions.length > 0 &&
             currentQuestionIndex < quizQuestions.length && (
-              <p className={textNeutralCSS}>
+              <p className={textSmallCSS}>
                 Waiting for participants to answer ({usersAnswered.length}/
                 {numberOfParticipants} answered)
               </p>
             )}
-
-          {isHost && <Button onClick={handleEndQuiz}>End Quiz</Button>}
-        </>
+        </div>
       )}
+      {isHost && <Button onClick={handleEndQuiz}>End Quiz</Button>}
     </div>
   );
 }
