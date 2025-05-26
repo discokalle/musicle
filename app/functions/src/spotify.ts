@@ -41,9 +41,9 @@ export const exchangeSpotifyCode = onCall(
     const spotifyClientSecret = spotifyClientSecretVar.value();
 
     if (!spotifyClientId || !spotifyClientSecret || !spotifyRedirectUri) {
-      console.error(
-        "Spotify configuration missing in Firebase environment variables."
-      );
+      // console.error(
+      //   "Spotify configuration missing in Firebase environment variables."
+      // );
       throw new HttpsError("internal", "Server configuration error.");
     }
 
@@ -82,11 +82,11 @@ export const exchangeSpotifyCode = onCall(
 
       return { success: true, message: "Spotify connected successfully." };
     } catch (e: any) {
-      console.error(
-        "Error exchanging Spotify code for user:",
-        userId,
-        e.response?.data || e.message || e
-      );
+      // console.error(
+      //   "Error exchanging Spotify code for user:",
+      //   userId,
+      //   e.response?.data || e.message || e
+      // );
       throw new HttpsError(
         "internal",
         "Failed to connect Spotify account. Please try again later.",
@@ -158,7 +158,7 @@ const refreshAccessToken = async (userId: string) => {
     }
 
     await db.ref(`users/${userId}/spotify`).update(updates);
-    console.log(`Successfully refreshed token for user: ${userId}`);
+    // console.log(`Successfully refreshed token for user: ${userId}`);
     return newAccessToken;
   } catch (e: any) {
     console.error(

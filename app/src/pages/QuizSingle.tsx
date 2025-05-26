@@ -43,7 +43,7 @@ function QuizSingle() {
       const userId = auth.currentUser?.uid;
 
       if (!userId) {
-        console.error("User not logged in. Cannot fetch top tracks.");
+        // console.error("User not logged in. Cannot fetch top tracks.");
         setIsLoading(false);
         return;
       }
@@ -66,7 +66,7 @@ function QuizSingle() {
         setIsrcsFromTopTracks(extractedIsrcs);
         setIsLoading(false);
       } catch (error) {
-        console.error("Error fetching top tracks:", error);
+        // console.error("Error fetching top tracks:", error);
         setIsLoading(false);
       }
     }
@@ -98,7 +98,7 @@ function QuizSingle() {
           finalQuestions.push(...picked);
         }
       } catch (error) {
-        console.error(`Error generating questions for ISRC ${isrc}:`, error);
+        // console.error(`Error generating questions for ISRC ${isrc}:`, error);
       }
     }
 

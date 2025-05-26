@@ -180,7 +180,7 @@ function QuizSession() {
                   await setParticipantIsrc({ quizId, userId, isrcs });
                 }
               } catch (e) {
-                console.error(`Error fetching tracks for ${userId}:`, e);
+                // console.error(`Error fetching tracks for ${userId}:`, e);
                 await setParticipantIsrc({
                   quizId,
                   userId,
@@ -193,7 +193,7 @@ function QuizSession() {
 
         setInitialized(true);
       } catch (e) {
-        console.error("Initialization failed:", e);
+        // console.error("Initialization failed:", e);
       }
     };
 
@@ -266,7 +266,7 @@ function QuizSession() {
             setIsShowingScores(false);
             isShowingScoresRef.current = false;
             setUsersAnswered(Object.keys(fetchedCurrentQuestionAnswers));
-            console.log("Question advanced to:", fetchedCurrentQuestionIndex);
+            // console.log("Question advanced to:", fetchedCurrentQuestionIndex);
           } else {
             setUsersAnswered(Object.keys(fetchedCurrentQuestionAnswers));
           }
@@ -283,7 +283,7 @@ function QuizSession() {
               newParticipantIds.includes(uid)
             )
           ) {
-            console.log("All participants answered, showing scores...");
+            // console.log("All participants answered, showing scores...");
             setIsShowingScores(true);
             isShowingScoresRef.current = true;
           }
@@ -291,7 +291,7 @@ function QuizSession() {
           setAreQuestionsGenerated(false);
         }
       } catch (e) {
-        console.error("Polling failed:", e);
+        // console.error("Polling failed:", e);
         //Handle quiz session termination by host
         if (
           e &&
@@ -336,12 +336,12 @@ function QuizSession() {
         selectedOption: selectedOption,
       });
       if (res.data.success) {
-        console.log("Answer submitted and scored.");
+        // console.log("Answer submitted and scored.");
       } else {
-        console.error("Failed to submit answer.");
+        // console.error("Failed to submit answer.");
       }
     } catch (e: any) {
-      console.error("Error submitting answer:", e);
+      // console.error("Error submitting answer:", e);
       setIsLockedIn(false);
     }
   };
@@ -354,7 +354,7 @@ function QuizSession() {
     try {
       await advanceQuizQuestion({ quizId, newQuestionIndex: nextIndex });
     } catch (e: any) {
-      console.error("Error advancing question:", e);
+      // console.error("Error advancing question:", e);
       alert("Failed to advance question.");
     }
   };
@@ -383,7 +383,7 @@ function QuizSession() {
             allGeneratedQuestions.push(allQuestionsForSong[randomIndex]);
           }
         } catch (e) {
-          console.error(`Error generating question for ISRC ${isrc}:`, e);
+          // console.error(`Error generating question for ISRC ${isrc}:`, e);
         }
       }
     }
@@ -397,10 +397,10 @@ function QuizSession() {
         });
         setQuizQuestions(allGeneratedQuestions);
         setAreQuestionsGenerated(true);
-        console.log("Host successfully stored all quiz questions.");
+        // console.log("Host successfully stored all quiz questions.");
         return true;
       } catch (e: any) {
-        console.error("Host failed to store quiz questions:", e);
+        // console.error("Host failed to store quiz questions:", e);
         return false;
       }
     } else {
@@ -450,7 +450,7 @@ function QuizSession() {
         alert("Failed to start quiz.");
       }
     } catch (e: any) {
-      console.error("Error starting quiz:", e);
+      // console.error("Error starting quiz:", e);
       alert(`Error starting quiz: ${e.message}`);
       setIsGenerating(false);
     }
