@@ -29,6 +29,21 @@ export const createQuiz = onCall(async (req: CallableRequest) => {
     //Link the host to this quiz
     await db.ref(`users/${hostUserId}/hostingQuizId`).set(quizId);
 
+    //Game stats
+    const numHostedQuizzesRef = db.ref(
+      `users/${hostUserId}/gameStats/quiz/numHostedQuizzes`
+    );
+    await numHostedQuizzesRef.transaction((currCnt) => {
+      return (currCnt || 0) + 1;
+    });
+
+    const numPlayedQuizzesRef = db.ref(
+      `users/${hostUserId}/gameStats/quiz/numParticipatedQuizzes`
+    );
+    await numPlayedQuizzesRef.transaction((currCnt) => {
+      return (currCnt || 0) + 1;
+    });
+
     const newQuiz: QuizSessionData = {
       hostUserId,
       participants: { [hostUserId]: true },
@@ -74,6 +89,14 @@ export const joinQuiz = onCall(
 
       //Add the user to the quiz's participants
       await db.ref(`quizzes/${quizId}/participants/${userId}`).set(true);
+
+      //Game stats
+      const numPlayedQuizzesRef = db.ref(
+        `users/${userId}/gameStats/quiz/numParticipatedQuizzes`
+      );
+      await numPlayedQuizzesRef.transaction((currCnt) => {
+        return (currCnt || 0) + 1;
+      });
 
       return { success: true };
     } catch (e: any) {
@@ -477,6 +500,29 @@ export const submitQuizAnswer = onCall(
         });
       }
 
+      //Game stats
+      const userQuizStatsRef = db.ref(`users/${userId}/gameStats/quiz`);
+      await userQuizStatsRef
+        .child("numTotalAnswers")
+        .transaction((curr) => (curr || 0) + 1);
+      if (isCorrect) {
+        await userQuizStatsRef
+          .child("numCorrectAnswers")
+          .transaction((curr) => (curr || 0) + 1);
+      }
+      const userStatsSnapshot = await userQuizStatsRef.once("value");
+      const latestQuizStats = userStatsSnapshot.val();
+      const latestNumCorrectAnswers = latestQuizStats?.numCorrectAnswers || 0;
+      const latestNumTotalAnswers = latestQuizStats?.numTotalAnswers || 0;
+      if (latestNumTotalAnswers > 0) {
+        const percentage = (
+          (latestNumCorrectAnswers / latestNumTotalAnswers) *
+          100
+        ).toFixed(1);
+        const accuracyString = `${latestNumCorrectAnswers}/${latestNumTotalAnswers} (${percentage}%)`;
+        await userQuizStatsRef.child("numAccuracy").set(accuracyString);
+      }
+
       return { success: true, isCorrect };
     } catch (e: any) {
       throw new HttpsError("internal", "Failed to submit answer.", e.message);
@@ -528,12 +574,30 @@ export const advanceQuizQuestion = onCall(
         ? Object.values(quizData.questions)
         : [];
 
-      //If all questions are done, mark the quiz as over
+      //If all questions are done, mark the quiz as over and set winner stats
       if (newQuestionIndex >= questions.length) {
         await quizRef.update({
           started: false,
           isQuizOver: true, //its jover
         });
+        //Detemrine winner for gamestats.
+        const scores = quizData.scores || {};
+        let maxScore = 0;
+        for (const score of Object.values(scores)) {
+          if (typeof score === "number" && score > maxScore) {
+            maxScore = score;
+          }
+        }
+        for (const participantId in scores) {
+          if (scores[participantId] === maxScore && maxScore > 0) {
+            const quizzesWonRef = db.ref(
+              `users/${participantId}/gameStats/quiz/numWonQuizzes`
+            );
+            await quizzesWonRef.transaction((currCnt) => {
+              return (currCnt || 0) + 1;
+            });
+          }
+        }
       } else {
         //if not over, advance to the next question
         await quizRef.update({ currentQuestionIndex: newQuestionIndex });
