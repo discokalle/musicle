@@ -7,7 +7,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 
 // assets
-import supermanLogo from "./assets/superman-logo.png";
+import musicleLogo from "./assets/Musicle_Logo.png";
 
 // components
 import NavBar from "./components/NavBar";
@@ -64,7 +64,7 @@ function App() {
     <Router>
       <div className={backgroundCSS}></div>
       <NavBar
-        logo={supermanLogo}
+        logo={musicleLogo}
         cols={navCols}
         isLoggedIn={isLoggedIn}
       ></NavBar>
