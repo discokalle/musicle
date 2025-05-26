@@ -1,15 +1,8 @@
-export type SongInfo = {
-  title: string;
-  artist: string;
-  artistId: string;
-  releaseDate: string;
-  artistActiveArea?: string;
-  artistBeginArea?: string;
-  artistBeginYear?: string;
-};
+import { SongInfo } from "../types";
 
 const FALLBACK_ISRCS = [
-  //For Spotify songs that are uploaded by small artists themselves
+  //Fallback for Spotify songs that are uploaded by small artists themselves and dont have any info in MB.
+  //Some of the most streamed spotify songs.
   "USUG11904206",
   "GBAHS1600463",
   "DEUM71807062",
@@ -20,41 +13,27 @@ const FALLBACK_ISRCS = [
   "USSM17700373",
   "GBAYE0601696",
   "USUG11500737",
+  "USGF19942501",
+  "USSM18100116",
+  "USWB10002407",
+  "GBCEL1300362",
 ];
-
-//ISRC codes seem to be universal across services for recordings.
-
-//Track which fallback ISRCs have already been used
-const usedFallbacks = new Set<string>();
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-function getRandomUnusedFallback(): string | null {
-  const unused = FALLBACK_ISRCS.filter((isrc) => !usedFallbacks.has(isrc));
-  if (unused.length === 0) {
-    console.warn("No more unused fallback ISRCs available.");
-    return null;
-  }
-
-  const random = unused[Math.floor(Math.random() * unused.length)];
-  usedFallbacks.add(random);
-  return random;
-}
-
+//ISRC codes seem to be universal across services for recordings.
 export async function getInfoByISRC(isrc: string): Promise<SongInfo | null> {
-  //First attempt with the original ISRC
+  //First attempt with the original ISRC (Almost always succeeds).
   const songInfo = await tryFetchISRCInfo(isrc);
   if (songInfo) return songInfo;
 
-  console.log(`Original ISRC '${isrc}' failed. Attempting fallback...`);
-  //If the original ISRC failed, try one random fallback ISRC that hasn't been used
-  const fallback = getRandomUnusedFallback();
-  if (!fallback) {
-    console.warn("No fallback ISRC to try.");
-    return null;
-  }
+  console.log(`Original ISRC '${isrc}' failed. Attempting random fallback...`);
 
+  //Pick one random fallback ISRC from the array
+  const fallback =
+    FALLBACK_ISRCS[Math.floor(Math.random() * FALLBACK_ISRCS.length)];
   console.log(`Trying fallback ISRC: ${fallback}`);
+
   const fallbackInfo = await tryFetchISRCInfo(fallback);
   if (fallbackInfo) return fallbackInfo;
 
@@ -64,9 +43,8 @@ export async function getInfoByISRC(isrc: string): Promise<SongInfo | null> {
 
 async function tryFetchISRCInfo(isrc: string): Promise<SongInfo | null> {
   //Respect MusicBrainz rate limit: 1 request per second.
-  //Add a slight buffer (e.g., 1100ms) to be safe.
-  //Without this, MusicBrainz stops all requests.
-  await delay(1100);
+  //Without this, MusicBrainz stops all requests after a while.
+  await delay(1000);
 
   let data;
   try {
@@ -181,6 +159,6 @@ async function fetchArtistInfoById(artistId: string): Promise<{
   return {
     activeArea: data["area"]?.name,
     beginArea: data["begin-area"]?.name,
-    beginYear: data["life-span"]?.begin, //Birth year for person; first formation year for group.
+    beginYear: data["life-span"]?.begin, //Birth date for person; first formation date for group.
   };
 }

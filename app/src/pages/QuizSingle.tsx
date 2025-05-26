@@ -1,21 +1,21 @@
+import Button from "../components/Button";
 import { useEffect, useState } from "react";
-import { Question } from "../types";
-import { getInfoByISRC } from "../song-info";
+import { Question, TrackData } from "../types";
+import { getInfoByISRC } from "../utility/song-info";
 import QuizCard from "../components/QuizCard";
-import { generateQuestions } from "../question-generator";
+import { generateQuestions } from "../utility/question-generator";
 import LoadingAnimation from "../components/LoadingAnimation";
+import { httpsCallable } from "firebase/functions";
+import { auth, functions } from "../firebase";
 
-//ISRC codes seem to be universal across services for recordings.
-const ISRCs = [
-  "GBN9Y1100088",
-  "USSM17700373",
-  /* "SEPQA2500011",
-  "GBAYE0601696",
-  "USUG11500737", */
-];
+const getTopTracksCallable = httpsCallable<
+  { userId: string; timeRange: string },
+  { topTracks: TrackData[] }
+>(functions, "getTopTracks");
 
 function randomPick(array: Question[], count: number): Question[] {
-  return [...array].sort(() => 0.5 - Math.random()).slice(0, count);
+  const questionsToPick = Math.min(count, array.length);
+  return [...array].sort(() => 0.5 - Math.random()).slice(0, questionsToPick);
 }
 
 function shuffle(array: Question[]): Question[] {
@@ -25,6 +25,9 @@ function shuffle(array: Question[]): Question[] {
 function QuizSingle() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isrcsFromTopTracks, setIsrcsFromTopTracks] = useState<string[]>([]);
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [numSongsToUse, setNumSongsToUse] = useState(1);
 
   const [questionNumber, setQuestionNumber] = useState(1);
   const [selectedOption, setSelectedOption] = useState<string>();
@@ -32,21 +35,80 @@ function QuizSingle() {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
-    async function loadQuestions() {
-      const finalQuestions: Question[] = [];
-      for (const isrc of ISRCs) {
+    async function fetchUserTopTracks() {
+      setIsLoading(true);
+      const userId = auth.currentUser?.uid;
+
+      if (!userId) {
+        console.error("User not logged in. Cannot fetch top tracks.");
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const topTracksRes = await getTopTracksCallable({
+          userId,
+          timeRange: "short_term",
+        });
+        const tracks = topTracksRes.data.topTracks;
+
+        if (tracks.length === 0) {
+          console.warn("No top tracks found for the user.");
+          setIsLoading(false);
+          return;
+        }
+
+        const extractedIsrcs = tracks.filter((t) => t.isrc).map((t) => t.isrc!);
+
+        setIsrcsFromTopTracks(extractedIsrcs);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching top tracks:", error);
+        setIsLoading(false);
+      }
+    }
+    fetchUserTopTracks();
+  }, []);
+
+  const handleStartQuiz = async () => {
+    setIsLoading(true);
+    setQuizStarted(true);
+
+    const selectedIsrcs = [...isrcsFromTopTracks]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, numSongsToUse);
+
+    if (selectedIsrcs.length === 0) {
+      console.warn("No ISRCs available for selected number of songs.");
+      setIsLoading(false);
+      setQuizStarted(false);
+      return;
+    }
+
+    const finalQuestions: Question[] = [];
+    for (const isrc of selectedIsrcs) {
+      try {
         const song = await getInfoByISRC(isrc);
         if (song) {
           const generated = generateQuestions(song);
-          const picked = randomPick(generated, 2);
+          const picked = randomPick(generated, 1);
           finalQuestions.push(...picked);
         }
+      } catch (error) {
+        console.error(`Error generating questions for ISRC ${isrc}:`, error);
       }
-      setQuestions(shuffle(finalQuestions));
-      setIsLoading(false);
     }
-    loadQuestions();
-  }, []);
+
+    if (finalQuestions.length === 0) {
+      console.warn("No questions could be generated from the selected songs.");
+      setIsLoading(false);
+      setQuizStarted(false);
+      return;
+    }
+
+    setQuestions(shuffle(finalQuestions));
+    setIsLoading(false);
+  };
 
   function handleSelect(option: string) {
     if (!isLockedIn) setSelectedOption(option);
@@ -68,6 +130,44 @@ function QuizSingle() {
 
   const centerCSS =
     "absolute flex flex-col items-center left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2";
+
+  const labelCSS = "mt-4 text-neutral";
+  const selectCSS = "bg-secondary";
+
+  if (!quizStarted) {
+    if (isLoading) {
+      return (
+        <div className={centerCSS}>
+          <LoadingAnimation></LoadingAnimation>
+        </div>
+      );
+    }
+    return (
+      <div className={centerCSS}>
+        <h2 className="text-3xl text-neutral mb-4">Choose Number of Songs</h2>
+        <label className={labelCSS}>
+          Number of songs for the quiz:
+          <select
+            value={numSongsToUse}
+            onChange={(e) => setNumSongsToUse(parseInt(e.target.value))}
+            className={selectCSS}
+          >
+            {[1, 2, 3, 4, 5].map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
+        </label>
+        {isrcsFromTopTracks.length > 0 && (
+          <Button onClick={handleStartQuiz}>Start Quiz</Button>
+        )}
+        {isrcsFromTopTracks.length === 0 && !isLoading && (
+          <p className="text-neutral">No songs available for selection.</p>
+        )}
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -96,6 +196,7 @@ function QuizSingle() {
         onSelect={handleSelect}
         onLockIn={handleLockIn}
         onNext={handleNext}
+        showFeedback={isLockedIn}
         score={score}
         totalQuestions={questions.length}
         questionNumber={questionNumber}

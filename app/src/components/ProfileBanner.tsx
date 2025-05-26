@@ -92,10 +92,10 @@ function ProfileBanner({ userSnapshot }: Props) {
 
   const quizStats = userSnapshot.val()?.gameStats?.quiz;
   const quizKeyToName: Record<string, string> = {
-    numEnqueuedTracks: "Tracks Enqueued",
-    numHostedSessions: "Sessions Hosted",
-    numParticipatedSessions: "Sessions Participated",
-    numVotes: "Tracks Voted",
+    numParticipatedQuizzes: "Quizzes Played",
+    numHostedQuizzes: "Quizzes Hosted",
+    numWonQuizzes: "Quizzes Won",
+    numAccuracy: "Answer Accuracy",
   };
 
   const usernameCSS = "text-3xl font-bold text-neutral";
@@ -152,16 +152,21 @@ function ProfileBanner({ userSnapshot }: Props) {
           </h3>
           {quizStats ? (
             <div className="grid grid-cols-[1fr_auto] gap-x-5 gap-y-1 text-sm">
-              {Object.entries(quizStats).map(([key, value]) => (
-                <>
-                  <span className="text-gray-400">
-                    {quizKeyToName[key] ?? key}:
-                  </span>
-                  <span className="text-neutral font-medium text-right">
-                    {String(value)}
-                  </span>
-                </>
-              ))}
+              {Object.entries(quizStats)
+                .filter(
+                  ([key]) =>
+                    key !== "numCorrectAnswers" && key !== "numTotalAnswers"
+                )
+                .map(([key, value]) => (
+                  <>
+                    <span className="text-gray-400">
+                      {quizKeyToName[key] ?? key}:
+                    </span>
+                    <span className="text-neutral font-medium text-right">
+                      {String(value)}
+                    </span>
+                  </>
+                ))}
             </div>
           ) : (
             <div>No stats to show.</div>

@@ -35,6 +35,16 @@ export type QueueItemData = {
   votes: Record<string, boolean>;
 };
 
+export type SongInfo = {
+  title: string;
+  artist: string;
+  artistId: string;
+  releaseDate: string;
+  artistActiveArea?: string;
+  artistBeginArea?: string;
+  artistBeginYear?: string;
+};
+
 export type Question = {
   question: string;
   options: string[];

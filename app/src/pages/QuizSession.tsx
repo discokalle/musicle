@@ -5,8 +5,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { httpsCallable } from "firebase/functions";
 import { auth, functions } from "../firebase";
-import { getInfoByISRC } from "../song-info";
-import { generateQuestions } from "../question-generator";
+import { getInfoByISRC } from "../utility/song-info";
+import { generateQuestions } from "../utility/question-generator";
 import LoadingAnimation from "../components/LoadingAnimation";
 
 //Cloud state of the quiz
@@ -153,7 +153,7 @@ function QuizSession() {
               try {
                 const topTracksRes = await getTopTracks({
                   userId,
-                  timeRange: "medium_term",
+                  timeRange: "short_term",
                 });
                 const tracks = topTracksRes.data.topTracks;
                 if (tracks.length === 0) {
