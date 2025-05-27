@@ -2,7 +2,7 @@
 
 ## Screencasts
 
-...
+### [Project Screencast](https://youtu.be/D5uOKUn5cbo)
 
 ## Project Description
 
@@ -20,8 +20,7 @@
 
 - Client framework (front-end): React (w/ Tailwind)
 - Server framework (back-end): Firebase
-    - Realtime Database
-    - Authentication
-    - Functions
-    - Storage
-
+  - Realtime Database
+  - Authentication
+  - Functions
+  - Storage
