@@ -364,7 +364,7 @@ function QuizSession() {
     const allGeneratedQuestions: Question[] = [];
 
     if (Object.keys(participantIsrcMap).length === 0) {
-      console.warn("No participant ISRCs available to generate questions.");
+      // console.warn("No participant ISRCs available to generate questions.");
       return false;
     }
 
@@ -404,7 +404,7 @@ function QuizSession() {
         return false;
       }
     } else {
-      console.warn("No questions generated for the quiz.");
+      // console.warn("No questions generated for the quiz.");
       return false;
     }
   };

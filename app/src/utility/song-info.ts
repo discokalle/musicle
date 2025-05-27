@@ -37,7 +37,7 @@ export async function getInfoByISRC(isrc: string): Promise<SongInfo | null> {
   const fallbackInfo = await tryFetchISRCInfo(fallback);
   if (fallbackInfo) return fallbackInfo;
 
-  console.warn(`Fallback ISRC '${fallback}' also failed to fetch song info.`);
+  // console.warn(`Fallback ISRC '${fallback}' also failed to fetch song info.`);
   return null;
 }
 
@@ -86,9 +86,9 @@ async function tryFetchISRCInfo(isrc: string): Promise<SongInfo | null> {
   }
 
   if (!earliestRecording) {
-    console.warn(
-      `No earliest recording with a valid release date found for ISRC: ${isrc}`
-    );
+    // console.warn(
+    //   `No earliest recording with a valid release date found for ISRC: ${isrc}`
+    // );
     return null;
   }
 
@@ -101,9 +101,9 @@ async function tryFetchISRCInfo(isrc: string): Promise<SongInfo | null> {
     !artistCredit.name ||
     !artistCredit.artist?.id
   ) {
-    console.warn(
-      `Missing critical song info (title, artist, or artistId) for ISRC: ${isrc}`
-    );
+    // console.warn(
+    //   `Missing critical song info (title, artist, or artistId) for ISRC: ${isrc}`
+    // );
     return null;
   }
 

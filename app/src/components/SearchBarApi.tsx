@@ -49,7 +49,7 @@ function SearchBarApi({
         setShowRecs(results.length > 0); // shows recs if there were any results
       } catch (e: any) {
         if (isCancelled) return;
-        console.log(`Fetching error: ${e.message}`);
+        // console.log(`Fetching error: ${e.message}`);
         setRecs([]);
         setShowRecs(false);
       }

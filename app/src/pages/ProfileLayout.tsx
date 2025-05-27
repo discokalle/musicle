@@ -97,7 +97,7 @@ function ProfileLayout() {
         const updatedSnapshot = await get(ref(db, `users/${userSnapshot.key}`));
         setUserSnapshot(updatedSnapshot);
       } catch (error) {
-        console.log("Failed to re-fetch user data:", error);
+        // console.log("Failed to re-fetch user data:", error);
       }
     }
   };

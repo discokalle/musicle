@@ -25,7 +25,7 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
       await signOut(auth);
       await set(ref(db, `users/${userId}/isOnline`), null);
     } catch (e: any) {
-      console.log("Signout failed.");
+      // console.log("Signout failed.");
     }
   };
 

@@ -27,7 +27,7 @@ function QueueListItem({ sessionId, id, data, className }: Props) {
     try {
       await voteForTrack({ sessionId, queueItemId: id });
     } catch (e: any) {
-      console.log("Error:", e.message);
+      // console.log("Error:", e.message);
     }
   };
 

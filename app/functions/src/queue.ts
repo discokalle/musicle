@@ -158,7 +158,7 @@ export const createSession = onCall(async (req: CallableRequest) => {
       createdAt: Date.now(),
     } as SessionData);
 
-    console.log(`Session created: ${sessionId} by host: ${hostUserId}`);
+    // console.log(`Session created: ${sessionId} by host: ${hostUserId}`);
 
     return { sessionId: sessionId };
   } catch (e: any) {
@@ -198,7 +198,7 @@ export const joinSession = onCall(
         return (currCnt || 0) + 1;
       });
 
-      console.log(`User ${userId} joined session ${sessionId}`);
+      // console.log(`User ${userId} joined session ${sessionId}`);
 
       return { success: true };
     } catch (e: any) {
@@ -541,7 +541,7 @@ export const playNextTrack = onCall(
       )[0];
 
       if (!nextTrack || !nextTrack.track || !nextTrack.track.uri) {
-        console.error("Next track or track URI is invalid.", nextTrack);
+        // console.error("Next track or track URI is invalid.", nextTrack);
         throw new HttpsError(
           "internal",
           "Could not determine a valid next track from the queue."
@@ -830,7 +830,7 @@ export const clearQueueOnSpotify = onCall(
         userId: hostUserId,
       });
 
-      console.log(res.data.queue);
+      // console.log(res.data.queue);
 
       const numSkips =
         res.data.queue.length + res.data.currentlyPlaying ? 1 : 0;

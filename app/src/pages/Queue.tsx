@@ -49,7 +49,7 @@ function Queue() {
           navigate(snapshot.val());
         }
       } catch (e: any) {
-        console.log("Error:", e.message);
+        // console.log("Error:", e.message);
       } finally {
         setIsLoading(false);
       }
@@ -72,7 +72,7 @@ function Queue() {
       navigate(sessionId);
     } catch (e: any) {
       alert(`Failed to create Queue session: ${e.message}`);
-      console.log(e.code, e.message);
+      // console.log(e.code, e.message);
     }
   };
 

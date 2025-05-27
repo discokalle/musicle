@@ -161,11 +161,11 @@ const refreshAccessToken = async (userId: string) => {
     // console.log(`Successfully refreshed token for user: ${userId}`);
     return newAccessToken;
   } catch (e: any) {
-    console.error(
-      "Error during Spotify token refresh",
-      userId,
-      e.response?.data || e.message
-    );
+    // console.error(
+    //   "Error during Spotify token refresh",
+    //   userId,
+    //   e.response?.data || e.message
+    // );
     if (e.response?.data?.error === "invalid_grant") {
       await db.ref(`users/${userId}/spotify`).remove();
       throw new HttpsError(

@@ -56,7 +56,7 @@ function QuizSingle() {
         const tracks = topTracksRes.data.topTracks;
 
         if (tracks.length === 0) {
-          console.warn("No top tracks found for the user.");
+          // console.warn("No top tracks found for the user.");
           setIsLoading(false);
           return;
         }
@@ -82,7 +82,7 @@ function QuizSingle() {
       .slice(0, numSongsToUse);
 
     if (selectedIsrcs.length === 0) {
-      console.warn("No ISRCs available for selected number of songs.");
+      // console.warn("No ISRCs available for selected number of songs.");
       setIsLoading(false);
       setQuizStarted(false);
       return;
@@ -103,7 +103,7 @@ function QuizSingle() {
     }
 
     if (finalQuestions.length === 0) {
-      console.warn("No questions could be generated from the selected songs.");
+      // console.warn("No questions could be generated from the selected songs.");
       setIsLoading(false);
       setQuizStarted(false);
       return;

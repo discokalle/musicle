@@ -61,7 +61,7 @@ function SpotifyStats() {
           setTopArtists(resArtists.data.topArtists);
         }
       } catch (e: any) {
-        console.log(e.message, e.response.data);
+        // console.log(e.message, e.response.data);
       }
 
       setIsLoading(false);

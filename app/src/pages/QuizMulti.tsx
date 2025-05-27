@@ -46,7 +46,7 @@ function QuizMulti() {
           navigate(snapshot.val());
         }
       } catch (e: any) {
-        console.log("Error:", e.message);
+        // console.log("Error:", e.message);
       } finally {
         setIsLoading(false);
       }
@@ -66,7 +66,7 @@ function QuizMulti() {
       const quizId = res.data.quizId;
       navigate(quizId);
     } catch (e: any) {
-      console.log(e.code, e.message);
+      // console.log(e.code, e.message);
     }
   };
 
