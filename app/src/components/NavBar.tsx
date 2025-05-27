@@ -38,7 +38,10 @@ function NavBar({ logo, cols, isLoggedIn }: Props) {
 
   return (
     <div className={containerCSS}>
-      <Link to="/home" className="relative inline-block h-[75%]">
+      <Link
+        to={auth.currentUser ? "/home" : "/"}
+        className="relative inline-block h-[75%]"
+      >
         <img src={logo} alt="Logo" className="w-full h-full" />
       </Link>
       {isLoggedIn && (
