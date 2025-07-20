@@ -1,8 +1,8 @@
-# TDDD27 Advanced Web Programming
+# Musicle
 
-## Screencasts
+(The website is not hosted anywhere as non-free features that were used for the back-end have expired. However, there is a [screencast](https://youtu.be/D5uOKUn5cbo) of the app which displays the key functionality.)
 
-### [Project Screencast](https://youtu.be/D5uOKUn5cbo)
+This project was done as part of the course [TDDD27 Advanced Web Programming](https://www.ida.liu.se/~TDDD27/).
 
 ## Project Description
 
