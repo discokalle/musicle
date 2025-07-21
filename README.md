@@ -2,7 +2,7 @@
 
 (The website is not hosted anymore as non-free features that were used for the back-end have expired. However, there is a [screencast](https://youtu.be/zaHylm92xhY) of the app which covers the functionality.)
 
-This project was done as part of the course [TDDD27 Advanced Web Programming](https://www.ida.liu.se/~TDDD27/).
+This project was done as part of the course [TDDD27 Advanced Web Programming](https://www.ida.liu.se/~TDDD27/), together with my collaborator [@discokalle](https://github.com/discokalle).
 
 ## Project Description
 
